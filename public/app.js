@@ -120,6 +120,14 @@ class SupremApp {
       const currentProvider = window.supremBrain?.provider || 'builtin';
       this.dom.apiProviderQuick.value = isActive ? 'local' : currentProvider;
     }
+
+    if (this.dom.apiKeyQuickInput && window.supremBrain?.apiKey) {
+      this.dom.apiKeyQuickInput.value = window.supremBrain.apiKey;
+    }
+
+    if (this.dom.apiModelQuick && window.supremBrain?.model) {
+      this.dom.apiModelQuick.value = window.supremBrain.model;
+    }
   }
 
   updateLocalLlmUI(isActive) {
@@ -139,7 +147,7 @@ class SupremApp {
     }
     if (this.dom.apiKeyStatusTag) {
       if (isActive) {
-        this.dom.apiKeyStatusTag.textContent = 'LOCAL AI (9931)';
+        this.dom.apiKeyStatusTag.textContent = 'LOCAL AI (8080)';
         this.dom.apiKeyStatusTag.classList.add('active');
       } else {
         const prov = window.supremBrain?.provider || 'builtin';
@@ -162,8 +170,8 @@ class SupremApp {
 
     if (!silent) {
       if (newState) {
-        this.addTranscript('system', 'COGNITIVE CORE: ROUTED TO LOCAL LLM (PORT 9931)');
-        this.speak('Local intelligence connected on port 9931, Mr. Moxx.');
+        this.addTranscript('system', 'COGNITIVE CORE: ROUTED TO LOCAL LLM (PORT 8080)');
+        this.speak('Local intelligence connected on port 8080, Mr. Moxx.');
       } else {
         this.addTranscript('system', 'COGNITIVE CORE: RESTORED TO DEFAULT PROVIDER');
         this.speak('Restored default cognitive provider, Mr. Moxx.');
@@ -962,6 +970,20 @@ class SupremApp {
       });
     }
 
+    // Provider select change hint
+    if (this.dom.apiProviderQuick) {
+      this.dom.apiProviderQuick.addEventListener('change', (e) => {
+        const prov = e.target.value;
+        if (prov === 'anthropic' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
+          this.dom.apiModelQuick.placeholder = 'claude-3-5-sonnet-20241022';
+        } else if (prov === 'openai' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
+          this.dom.apiModelQuick.placeholder = 'gpt-4o';
+        } else if (prov === 'groq' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
+          this.dom.apiModelQuick.placeholder = 'llama-3.3-70b-versatile';
+        }
+      });
+    }
+
     // Settings Modal
     this.dom.openSettingsBtn.addEventListener('click', () => {
       window.jarvisAudio.playClick();
@@ -974,7 +996,7 @@ class SupremApp {
       const modelInput = document.getElementById('modelNameInput');
       if (modelInput) modelInput.value = window.supremBrain.model || '';
       const localUrlInput = document.getElementById('localLlmUrlInput');
-      if (localUrlInput) localUrlInput.value = window.supremBrain.localLLMUrl || 'http://127.0.0.1:9931/v1/chat/completions';
+      if (localUrlInput) localUrlInput.value = window.supremBrain.localLLMUrl || 'http://127.0.0.1:8080/v1/messages';
       this.dom.settingsModal.classList.add('active');
     });
 

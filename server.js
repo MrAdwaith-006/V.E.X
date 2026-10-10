@@ -7,14 +7,17 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Load environment variables (.env) if present
+// Load environment variables (.env or env/.env.development) if present
 try {
-  if (process.loadEnvFile) {
-    process.loadEnvFile(path.join(__dirname, '.env'));
-  } else {
-    const envPath = path.join(__dirname, '.env');
-    if (fs.existsSync(envPath)) {
-      const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  const rootEnv = path.join(__dirname, '.env');
+  const envFolderDev = path.join(__dirname, 'env', '.env.development');
+  const targetEnv = fs.existsSync(rootEnv) ? rootEnv : (fs.existsSync(envFolderDev) ? envFolderDev : null);
+
+  if (targetEnv) {
+    if (process.loadEnvFile) {
+      process.loadEnvFile(targetEnv);
+    } else {
+      const lines = fs.readFileSync(targetEnv, 'utf8').split(/\r?\n/);
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) continue;
@@ -168,9 +171,9 @@ app.post('/api/system/lock', (req, res) => {
 // Weather API via Open-Meteo (No API key needed)
 app.get('/api/weather', async (req, res) => {
   try {
-    const lat = req.query.lat || '40.7128';
-    const lon = req.query.lon || '-74.0060';
-    const city = req.query.city || 'Moxx Citadel';
+    const lat = req.query.lat || process.env.WEATHER_LAT || '40.7128';
+    const lon = req.query.lon || process.env.WEATHER_LON || '-74.0060';
+    const city = req.query.city || process.env.WEATHER_CITY || 'Moxx Citadel';
 
     const response = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m&temperature_unit=celsius`
@@ -188,11 +191,13 @@ app.post('/api/chat-proxy', async (req, res) => {
 
   try {
     if (provider === 'groq') {
+      const activeKey = apiKey || process.env.GROQ_API_KEY;
+      if (!activeKey) return res.status(400).json({ error: 'Groq API Key not configured' });
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${activeKey}`
         },
         body: JSON.stringify({
           model: model || 'llama-3.3-70b-versatile',
@@ -204,11 +209,13 @@ app.post('/api/chat-proxy', async (req, res) => {
       const data = await response.json();
       return res.json(data);
     } else if (provider === 'openai') {
+      const activeKey = apiKey || process.env.OPENAI_API_KEY;
+      if (!activeKey) return res.status(400).json({ error: 'OpenAI API Key not configured' });
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${activeKey}`
         },
         body: JSON.stringify({
           model: model || 'gpt-4o',
@@ -220,20 +227,62 @@ app.post('/api/chat-proxy', async (req, res) => {
       const data = await response.json();
       return res.json(data);
     } else if (provider === 'gemini') {
+      const activeKey = apiKey || process.env.GEMINI_API_KEY;
+      if (!activeKey) return res.status(400).json({ error: 'Gemini API Key not configured' });
       const geminiModel = model || 'gemini-1.5-flash';
       const contents = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents })
       });
       const data = await response.json();
       return res.json(data);
+    } else if (provider === 'anthropic') {
+      const activeKey = apiKey || process.env.ANTHROPIC_API_KEY;
+      if (!activeKey) return res.status(400).json({ error: 'Anthropic API Key not configured' });
+      const anthropicModel = model || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+
+      // Anthropic requires system prompt at the top level and alternating user/assistant roles
+      const systemMessage = messages.find(m => m.role === 'system')?.content;
+      const anthropicMessages = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content
+        }));
+
+      if (anthropicMessages.length === 0) {
+        anthropicMessages.push({ role: 'user', content: 'Status report' });
+      }
+
+      const requestBody = {
+        model: anthropicModel,
+        max_tokens: req.body.max_tokens || 1024,
+        messages: anthropicMessages
+      };
+      if (systemMessage) requestBody.system = systemMessage;
+      if (temperature !== undefined) requestBody.temperature = temperature;
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': activeKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json({ error: data.error?.message || `Anthropic error: ${response.status}`, details: data });
+      }
+      return res.json(data);
     } else if (provider === 'ollama') {
-      const ollamaUrl = req.body.endpoint || 'http://localhost:11434';
+      const ollamaUrl = req.body.endpoint || process.env.OLLAMA_URL || 'http://localhost:11434';
       const response = await fetch(`${ollamaUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,17 +295,45 @@ app.post('/api/chat-proxy', async (req, res) => {
       const data = await response.json();
       return res.json(data);
     } else if (provider === 'local') {
-      const localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:9931/v1/chat/completions';
+      const localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:8080/v1/messages';
       const localModel = model || process.env.LOCAL_LLM_MODEL || 'local-model';
-      const response = await fetch(localUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const isAnthropicType = req.body.llmType === 'anthropic' || process.env.LOCAL_LLM_TYPE === 'anthropic' || localUrl.includes('/messages') || localUrl.includes('anthropic');
+
+      let localBody;
+      let headers = { 'Content-Type': 'application/json' };
+
+      if (isAnthropicType) {
+        const systemMessage = messages.find(m => m.role === 'system')?.content;
+        const anthropicMessages = messages
+          .filter(m => m.role !== 'system')
+          .map(m => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content
+          }));
+        localBody = {
+          model: localModel,
+          max_tokens: req.body.max_tokens || 1024,
+          messages: anthropicMessages.length ? anthropicMessages : [{ role: 'user', content: 'Status report' }]
+        };
+        if (systemMessage) localBody.system = systemMessage;
+        if (req.body.temperature !== undefined) localBody.temperature = req.body.temperature;
+        headers['anthropic-version'] = '2023-06-01';
+        if (apiKey || process.env.ANTHROPIC_API_KEY) {
+          headers['x-api-key'] = apiKey || process.env.ANTHROPIC_API_KEY;
+        }
+      } else {
+        localBody = {
           model: localModel,
           messages,
           temperature: req.body.temperature !== undefined ? req.body.temperature : 0.2,
           max_tokens: req.body.max_tokens || 300
-        })
+        };
+      }
+
+      const response = await fetch(localUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(localBody)
       });
       if (!response.ok) {
         const errorText = await response.text();

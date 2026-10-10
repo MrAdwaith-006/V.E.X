@@ -53,7 +53,7 @@
       </div>
 
       <div class="header-actions">
-        <button id="toggleLocalLlmBtn" class="hud-btn-icon local-llm-btn" title="Toggle Local LLM Mode (127.0.0.1:9931)">
+        <button id="toggleLocalLlmBtn" class="hud-btn-icon local-llm-btn" title="Toggle Local LLM Mode (127.0.0.1:8080)">
           <span class="status-dot"></span>
           🤖 LOCAL AI: <span id="localLlmStatusText">OFF</span>
         </button>
@@ -185,7 +185,8 @@
             <label for="apiProviderQuick" class="api-label">ENGINE</label>
             <select id="apiProviderQuick" class="api-select">
               <option value="builtin">Built-in (Offline)</option>
-              <option value="local">Local LLM (Port 9931)</option>
+              <option value="local">Local LLM (Port 8080 / Anthropic)</option>
+              <option value="anthropic">Anthropic (Claude 3.5)</option>
               <option value="groq">Groq (LLaMA 3.3)</option>
               <option value="gemini">Google Gemini</option>
               <option value="openai">OpenAI (GPT-4o)</option>
@@ -242,9 +243,9 @@
           <div class="panel-title-bar">
             <h2 class="panel-title">TELEMETRY TRANSCRIPT & COMMAND RELAY</h2>
             <div style="display: flex; align-items: center; gap: 14px;">
-              <div class="hud-toggle-wrapper local-ai-toggle-wrapper" title="Route queries directly to Local LLM on port 9931">
+              <div class="hud-toggle-wrapper local-ai-toggle-wrapper" title="Route queries directly to Local LLM on port 8080">
                 <input type="checkbox" id="localLlmToggle">
-                <label for="localLlmToggle">LOCAL AI (PORT 9931)</label>
+                <label for="localLlmToggle">LOCAL AI (PORT 8080)</label>
               </div>
               <div class="hands-free-toggle" title="Automatically keep listening for 'Suprem'">
                 <input type="checkbox" id="handsFreeToggle" checked>
@@ -420,7 +421,8 @@
         <label for="llmProviderSelect">COGNITIVE ENGINE PROVIDER</label>
         <select id="llmProviderSelect" class="form-select">
           <option value="builtin">Built-in Moxx Heuristic Engine (Instant / Offline)</option>
-          <option value="local">Local LLM Server (127.0.0.1:9931 / GGUF)</option>
+          <option value="local">Local LLM Server (127.0.0.1:8080 / Anthropic)</option>
+          <option value="anthropic">Anthropic Claude (Claude 3.5 Sonnet / Haiku)</option>
           <option value="groq">Groq (Ultra-Low Latency ~200ms / LLaMA 3.3)</option>
           <option value="gemini">Google Gemini (Gemini 1.5 Flash)</option>
           <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
@@ -430,11 +432,11 @@
 
       <div class="form-group">
         <label for="localLlmUrlInput">LOCAL LLM ENDPOINT (When using Local AI)</label>
-        <input type="text" id="localLlmUrlInput" class="form-input" value="http://127.0.0.1:9931/v1/chat/completions">
+        <input type="text" id="localLlmUrlInput" class="form-input" value="http://127.0.0.1:8080/v1/messages">
       </div>
 
       <div class="form-group">
-        <label for="apiKeyInput">API KEY (Groq / Gemini / OpenAI)</label>
+        <label for="apiKeyInput">API KEY (Anthropic / Groq / Gemini / OpenAI)</label>
         <input type="password" id="apiKeyInput" class="form-input" placeholder="Enter API key for unlimited AI intelligence...">
         <span style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted);">
           * Optional: Local AI and built-in heuristics require no API key.

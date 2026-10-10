@@ -11,7 +11,11 @@ class SupremBrain {
     this.model = localStorage.getItem('suprem_llm_model') || localStorage.getItem('jarvis_llm_model') || '';
     this.ollamaUrl = localStorage.getItem('suprem_ollama_url') || localStorage.getItem('jarvis_ollama_url') || 'http://localhost:11434';
     this.isLocalLLMActive = localStorage.getItem('suprem_local_llm_active') === 'true';
-    this.localLLMUrl = localStorage.getItem('suprem_local_llm_url') || 'http://127.0.0.1:9931/v1/chat/completions';
+    let storedLocalUrl = localStorage.getItem('suprem_local_llm_url');
+    if (!storedLocalUrl || storedLocalUrl.includes('9931')) {
+      storedLocalUrl = 'http://127.0.0.1:8080/v1/messages';
+    }
+    this.localLLMUrl = storedLocalUrl;
     this.localLLMModel = localStorage.getItem('suprem_local_llm_model') || 'local-model';
 
     this.conversationHistory = [
@@ -416,9 +420,9 @@ You are in full command of Moxx Industries technology, workstation controls, and
         apiKey: this.apiKey,
         model: isLocal ? (this.localLLMModel || 'local-model') : this.model,
         messages: this.conversationHistory,
-        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:9931/v1/chat/completions') : this.ollamaUrl,
+        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:8080/v1/messages') : this.ollamaUrl,
         temperature: isLocal ? 0.2 : 0.7,
-        max_tokens: isLocal ? 300 : 1024
+        max_tokens: isLocal ? 1024 : 1024
       };
 
       const res = await fetch('/api/chat-proxy', {
@@ -431,7 +435,11 @@ You are in full command of Moxx Industries technology, workstation controls, and
       let reply = '';
 
       if (activeProvider === 'local' || activeProvider === 'groq' || activeProvider === 'openai') {
-        reply = data.choices?.[0]?.message?.content || data.error || 'Telemetry received with no parsed response, Mr. Moxx.';
+        const anthropicText = Array.isArray(data.content) ? data.content.map(c => c.text || '').join('\n') : (typeof data.content === 'string' ? data.content : '');
+        reply = data.choices?.[0]?.message?.content || anthropicText || data.error?.message || data.error || 'Telemetry received with no parsed response, Mr. Moxx.';
+      } else if (activeProvider === 'anthropic') {
+        const anthropicText = Array.isArray(data.content) ? data.content.map(c => c.text || '').join('\n') : (typeof data.content === 'string' ? data.content : '');
+        reply = anthropicText || data.error?.message || data.error || 'No response decoded from Anthropic relay, Mr. Moxx.';
       } else if (activeProvider === 'gemini') {
         reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response decoded from Gemini relay, Mr. Moxx.';
       } else if (activeProvider === 'ollama') {
@@ -447,7 +455,7 @@ You are in full command of Moxx Industries technology, workstation controls, and
     } catch (err) {
       console.error('LLM query failed:', err);
       const errorMsg = activeProvider === 'local'
-        ? 'Unable to reach the local model on port 9931, Mr. Moxx. Please verify that your local AI server is active.'
+        ? 'Unable to reach the local model on port 8080, Mr. Moxx. Please verify that your local AI server is active.'
         : `Network telemetry hiccup connecting to the ${activeProvider} relay, Mr. Moxx. Defaulting to local heuristic intelligence.`;
       return {
         action: 'error',
