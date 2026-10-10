@@ -10,6 +10,9 @@ class SupremBrain {
     this.apiKey = localStorage.getItem('suprem_llm_api_key') || localStorage.getItem('jarvis_llm_api_key') || '';
     this.model = localStorage.getItem('suprem_llm_model') || localStorage.getItem('jarvis_llm_model') || '';
     this.ollamaUrl = localStorage.getItem('suprem_ollama_url') || localStorage.getItem('jarvis_ollama_url') || 'http://localhost:11434';
+    this.isLocalLLMActive = localStorage.getItem('suprem_local_llm_active') === 'true';
+    this.localLLMUrl = localStorage.getItem('suprem_local_llm_url') || 'http://127.0.0.1:9931/v1/chat/completions';
+    this.localLLMModel = localStorage.getItem('suprem_local_llm_model') || 'local-model';
 
     this.conversationHistory = [
       {
@@ -29,16 +32,25 @@ You are in full command of Moxx Industries technology, workstation controls, and
     this.systemStats = stats;
   }
 
-  setLLMConfig(provider, apiKey, model, ollamaUrl) {
+  setLocalLLMActive(active) {
+    this.isLocalLLMActive = !!active;
+    localStorage.setItem('suprem_local_llm_active', this.isLocalLLMActive ? 'true' : 'false');
+  }
+
+  setLLMConfig(provider, apiKey, model, ollamaUrl, localUrl, localModel) {
     this.provider = provider;
     this.apiKey = apiKey;
     this.model = model;
     if (ollamaUrl) this.ollamaUrl = ollamaUrl;
+    if (localUrl) this.localLLMUrl = localUrl;
+    if (localModel) this.localLLMModel = localModel;
 
     localStorage.setItem('suprem_llm_provider', provider);
     localStorage.setItem('suprem_llm_api_key', apiKey);
     localStorage.setItem('suprem_llm_model', model);
     if (ollamaUrl) localStorage.setItem('suprem_ollama_url', ollamaUrl);
+    if (localUrl) localStorage.setItem('suprem_local_llm_url', localUrl);
+    if (localModel) localStorage.setItem('suprem_local_llm_model', localModel);
   }
 
   // Fast-Path Command Processor (0ms latency local execution)
@@ -371,7 +383,11 @@ You are in full command of Moxx Industries technology, workstation controls, and
       };
     }
 
-    // 10. ROUTE TO LLM (IF CONFIGURED) OR MOXX HEURISTIC INTELLIGENCE
+    // 10. ROUTE TO LOCAL LLM OR CLOUD LLM OR HEURISTIC INTELLIGENCE
+    if (this.isLocalLLMActive || this.provider === 'local') {
+      return await this.askLLM(text, 'local');
+    }
+
     if (this.provider !== 'builtin' && this.apiKey) {
       return await this.askLLM(text);
     }
@@ -381,7 +397,8 @@ You are in full command of Moxx Industries technology, workstation controls, and
   }
 
   // LLM query router
-  async askLLM(prompt) {
+  async askLLM(prompt, overrideProvider = null) {
+    const activeProvider = overrideProvider || this.provider;
     try {
       this.conversationHistory.push({ role: 'user', content: prompt });
 
@@ -393,26 +410,31 @@ You are in full command of Moxx Industries technology, workstation controls, and
         ];
       }
 
+      const isLocal = activeProvider === 'local';
+      const payload = {
+        provider: activeProvider,
+        apiKey: this.apiKey,
+        model: isLocal ? (this.localLLMModel || 'local-model') : this.model,
+        messages: this.conversationHistory,
+        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:9931/v1/chat/completions') : this.ollamaUrl,
+        temperature: isLocal ? 0.2 : 0.7,
+        max_tokens: isLocal ? 300 : 1024
+      };
+
       const res = await fetch('/api/chat-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: this.provider,
-          apiKey: this.apiKey,
-          model: this.model,
-          messages: this.conversationHistory,
-          endpoint: this.ollamaUrl
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
       let reply = '';
 
-      if (this.provider === 'groq' || this.provider === 'openai') {
-        reply = data.choices?.[0]?.message?.content || 'Telemetry received with no parsed response, Mr. Moxx.';
-      } else if (this.provider === 'gemini') {
+      if (activeProvider === 'local' || activeProvider === 'groq' || activeProvider === 'openai') {
+        reply = data.choices?.[0]?.message?.content || data.error || 'Telemetry received with no parsed response, Mr. Moxx.';
+      } else if (activeProvider === 'gemini') {
         reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response decoded from Gemini relay, Mr. Moxx.';
-      } else if (this.provider === 'ollama') {
+      } else if (activeProvider === 'ollama') {
         reply = data.message?.content || 'Ollama response buffer empty, Mr. Moxx.';
       }
 
@@ -424,9 +446,12 @@ You are in full command of Moxx Industries technology, workstation controls, and
       };
     } catch (err) {
       console.error('LLM query failed:', err);
+      const errorMsg = activeProvider === 'local'
+        ? 'Unable to reach the local model on port 9931, Mr. Moxx. Please verify that your local AI server is active.'
+        : `Network telemetry hiccup connecting to the ${activeProvider} relay, Mr. Moxx. Defaulting to local heuristic intelligence.`;
       return {
         action: 'error',
-        speech: `Network telemetry hiccup connecting to the ${this.provider} relay, Mr. Moxx. Defaulting to local heuristic intelligence.`,
+        speech: errorMsg,
         type: 'error'
       };
     }

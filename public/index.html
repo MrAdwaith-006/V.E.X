@@ -53,6 +53,10 @@
       </div>
 
       <div class="header-actions">
+        <button id="toggleLocalLlmBtn" class="hud-btn-icon local-llm-btn" title="Toggle Local LLM Mode (127.0.0.1:9931)">
+          <span class="status-dot"></span>
+          🤖 LOCAL AI: <span id="localLlmStatusText">OFF</span>
+        </button>
         <button id="activateSensorsBtn" class="hud-btn-icon" style="background: rgba(0, 229, 255, 0.22); border-color: var(--stark-cyan); color: #fff; font-weight: 700;" title="Initialize Microphone & Optical Movement Tracking">
           ⚡ LINK SENSORS
         </button>
@@ -169,6 +173,51 @@
             <div class="metric-val">OPTIMAL</div>
           </div>
         </div>
+
+        <!-- API Key Configuration Section -->
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <h2 class="panel-title">API KEY VAULT</h2>
+          <span class="panel-tag" id="apiKeyStatusTag">NOT SET</span>
+        </div>
+
+        <div class="api-key-section">
+          <div class="api-key-provider-row">
+            <label for="apiProviderQuick" class="api-label">ENGINE</label>
+            <select id="apiProviderQuick" class="api-select">
+              <option value="builtin">Built-in (Offline)</option>
+              <option value="local">Local LLM (Port 9931)</option>
+              <option value="groq">Groq (LLaMA 3.3)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI (GPT-4o)</option>
+              <option value="ollama">Ollama (Local)</option>
+            </select>
+          </div>
+
+          <div class="api-key-input-row">
+            <label for="apiKeyQuickInput" class="api-label">KEY</label>
+            <div class="api-key-input-wrapper">
+              <input type="password" id="apiKeyQuickInput" class="api-key-input" placeholder="Enter API key...">
+              <button id="apiKeyVisibilityBtn" class="api-key-toggle-btn" title="Show / Hide Key">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="api-key-model-row">
+            <label for="apiModelQuick" class="api-label">MODEL</label>
+            <input type="text" id="apiModelQuick" class="api-key-input" placeholder="Custom model (optional)...">
+          </div>
+
+          <button id="saveApiKeyBtn" class="api-save-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            SAVE &amp; ACTIVATE
+          </button>
+        </div>
       </aside>
 
       <!-- ------------------------------------------------------------------
@@ -192,9 +241,15 @@
         <div class="voice-console">
           <div class="panel-title-bar">
             <h2 class="panel-title">TELEMETRY TRANSCRIPT & COMMAND RELAY</h2>
-            <div class="hands-free-toggle" title="Automatically keep listening for 'Suprem'">
-              <input type="checkbox" id="handsFreeToggle" checked>
-              <label for="handsFreeToggle">WAKE WORD: "SUPREM"</label>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="hud-toggle-wrapper local-ai-toggle-wrapper" title="Route queries directly to Local LLM on port 9931">
+                <input type="checkbox" id="localLlmToggle">
+                <label for="localLlmToggle">LOCAL AI (PORT 9931)</label>
+              </div>
+              <div class="hands-free-toggle" title="Automatically keep listening for 'Suprem'">
+                <input type="checkbox" id="handsFreeToggle" checked>
+                <label for="handsFreeToggle">WAKE WORD: "SUPREM"</label>
+              </div>
             </div>
           </div>
 
@@ -365,6 +420,7 @@
         <label for="llmProviderSelect">COGNITIVE ENGINE PROVIDER</label>
         <select id="llmProviderSelect" class="form-select">
           <option value="builtin">Built-in Moxx Heuristic Engine (Instant / Offline)</option>
+          <option value="local">Local LLM Server (127.0.0.1:9931 / GGUF)</option>
           <option value="groq">Groq (Ultra-Low Latency ~200ms / LLaMA 3.3)</option>
           <option value="gemini">Google Gemini (Gemini 1.5 Flash)</option>
           <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
@@ -373,16 +429,21 @@
       </div>
 
       <div class="form-group">
+        <label for="localLlmUrlInput">LOCAL LLM ENDPOINT (When using Local AI)</label>
+        <input type="text" id="localLlmUrlInput" class="form-input" value="http://127.0.0.1:9931/v1/chat/completions">
+      </div>
+
+      <div class="form-group">
         <label for="apiKeyInput">API KEY (Groq / Gemini / OpenAI)</label>
         <input type="password" id="apiKeyInput" class="form-input" placeholder="Enter API key for unlimited AI intelligence...">
         <span style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted);">
-          * Optional: S.U.P.R.E.M. works completely offline for all system tasks, protocols, and Moxx banter without any key.
+          * Optional: Local AI and built-in heuristics require no API key.
         </span>
       </div>
 
       <div class="form-group">
         <label for="modelNameInput">CUSTOM MODEL NAME (Optional)</label>
-        <input type="text" id="modelNameInput" class="form-input" placeholder="e.g. llama-3.3-70b-versatile, gpt-4o, gemini-1.5-flash">
+        <input type="text" id="modelNameInput" class="form-input" placeholder="e.g. local-model, llama-3.3-70b-versatile, gpt-4o">
       </div>
 
       <div class="form-group">
@@ -479,9 +540,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-  <script src="gesture-controller.js"></script>
+  <script type="module" src="gesture-controller.js"></script>
   <script src="sound-effects.js"></script>
   <script src="hud-visualizer.js"></script>
   <script src="jarvis-brain.js"></script>

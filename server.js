@@ -5,6 +5,27 @@ const { WebSocketServer } = require('ws');
 const os = require('os');
 const { exec } = require('child_process');
 const path = require('path');
+const fs = require('fs');
+
+// Load environment variables (.env) if present
+try {
+  if (process.loadEnvFile) {
+    process.loadEnvFile(path.join(__dirname, '.env'));
+  } else {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const [k, ...v] = trimmed.split('=');
+        if (k && !process.env[k.trim()]) process.env[k.trim()] = v.join('=').trim();
+      }
+    }
+  }
+} catch (e) {
+  // Ignore missing or unreadable .env file
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -222,6 +243,25 @@ app.post('/api/chat-proxy', async (req, res) => {
           stream: false
         })
       });
+      const data = await response.json();
+      return res.json(data);
+    } else if (provider === 'local') {
+      const localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:9931/v1/chat/completions';
+      const localModel = model || process.env.LOCAL_LLM_MODEL || 'local-model';
+      const response = await fetch(localUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: localModel,
+          messages,
+          temperature: req.body.temperature !== undefined ? req.body.temperature : 0.2,
+          max_tokens: req.body.max_tokens || 300
+        })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).json({ error: `Local LLM error: ${response.status}`, details: errorText });
+      }
       const data = await response.json();
       return res.json(data);
     } else {

@@ -1,17 +1,18 @@
 /**
  * S.U.P.R.E.M. Holographic Hand Gesture & Air-Touch Controller
+ * Powered by MediaPipe Tasks-Vision Hand Landmarker (JarvisHandTracker).
  * Replicates Tony Stark / Iron Man air gesture control:
  * 1. Virtual Repulsor Cursor mapped to index fingertip with EMA smoothing.
  * 2. Pinch (Thumb + Index) / Dwell Air-Touch click.
  * 3. Air swipe scroll (Up / Down).
- * 4. Hybrid Engine: MediaPipe Hands with Canvas Optical Motion Fallback.
+ * 4. Modular: imports JarvisHandTracker for plug-and-play hand detection.
  */
+import { JarvisHandTracker } from './hand-tracker.js';
 
 class SupremGestureController {
   constructor() {
     this.isActive = false;
-    this.mediaPipeHands = null;
-    this.camera = null;
+    this.tracker = null;
     this.videoElement = null;
 
     // Virtual cursor position & smoothing
@@ -38,15 +39,23 @@ class SupremGestureController {
     this.cursorState = null;
     this.dwellRing = null;
 
-    this.useMediaPipe = false;
+    this.handDetected = false;
     this.animId = null;
   }
 
   init(videoElementId) {
     this.videoElement = document.getElementById(videoElementId);
     this.createHolographicCursor();
-    this.initMediaPipe();
+
+    // Create the JarvisHandTracker bound to the existing camera video element
+    this.tracker = new JarvisHandTracker({
+      videoElement: this.videoElement,
+      onResults: (results) => this.onHandResults(results),
+      numHands: 1
+    });
+
     this.startCursorLoop();
+    console.log('[S.U.P.R.E.M.] Gesture Controller initialized with Tasks-Vision Hand Landmarker.');
   }
 
   createHolographicCursor() {
@@ -87,34 +96,7 @@ class SupremGestureController {
     this.dwellRing = document.getElementById('cursorDwellRing');
   }
 
-  async initMediaPipe() {
-    if (typeof window.Hands === 'function') {
-      try {
-        this.mediaPipeHands = new window.Hands({
-          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-        });
-
-        this.mediaPipeHands.setOptions({
-          maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.65,
-          minTrackingConfidence: 0.65
-        });
-
-        this.mediaPipeHands.onResults((results) => this.onHandResults(results));
-        this.useMediaPipe = true;
-        console.log('[S.U.P.R.E.M.] MediaPipe Hands Engine Initialized.');
-      } catch (err) {
-        console.warn('[S.U.P.R.E.M.] MediaPipe initialization failed, using CV Fallback:', err);
-        this.useMediaPipe = false;
-      }
-    } else {
-      console.log('[S.U.P.R.E.M.] MediaPipe script loading or offline, fallback active.');
-      this.useMediaPipe = false;
-    }
-  }
-
-  enable() {
+  async enable() {
     this.isActive = true;
     if (this.cursorElem) this.cursorElem.classList.add('active');
     const badge = document.getElementById('gestureStatusBadge');
@@ -124,9 +106,19 @@ class SupremGestureController {
     }
     const btn = document.getElementById('toggleGestureBtn');
     if (btn) btn.classList.add('active');
+
+    // Start the Tasks-Vision hand tracking loop if not already running
+    if (this.tracker && !this.tracker.running) {
+      try {
+        await this.tracker.start();
+        console.log('[S.U.P.R.E.M.] Hand tracking loop started via enable().');
+      } catch (err) {
+        console.warn('[S.U.P.R.E.M.] Hand tracker start failed:', err);
+      }
+    }
   }
 
-  disable() {
+  async disable() {
     this.isActive = false;
     if (this.cursorElem) this.cursorElem.classList.remove('active');
     const badge = document.getElementById('gestureStatusBadge');
@@ -136,32 +128,27 @@ class SupremGestureController {
     }
     const btn = document.getElementById('toggleGestureBtn');
     if (btn) btn.classList.remove('active');
-  }
 
-  toggle() {
-    if (this.isActive) this.disable();
-    else this.enable();
-  }
-
-  // Feed camera frame to MediaPipe if available
-  async sendFrame(video) {
-    if (!this.isActive || !video || video.readyState < 2) return;
-
-    if (this.useMediaPipe && this.mediaPipeHands) {
-      try {
-        await this.mediaPipeHands.send({ image: video });
-      } catch (e) {
-        // Fallback to motion-based cursor if MediaPipe drops frame
-      }
+    // Stop the Tasks-Vision hand tracking loop
+    if (this.tracker && this.tracker.running) {
+      await this.tracker.stop();
+      console.log('[S.U.P.R.E.M.] Hand tracking loop stopped via disable().');
     }
   }
 
-  // MediaPipe 21 Hand Landmarks Processor
+  async toggle() {
+    if (this.isActive) await this.disable();
+    else await this.enable();
+  }
+
+  // MediaPipe Tasks-Vision 21 Hand Landmarks Processor
+  // Called by JarvisHandTracker's onResults callback
   onHandResults(results) {
     if (!this.isActive) return;
 
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      const landmarks = results.multiHandLandmarks[0];
+    if (results.landmarks && results.landmarks.length > 0) {
+      const landmarks = results.landmarks[0];
+      this.handDetected = true;
 
       // Landmark 8: Index Fingertip
       // Landmark 4: Thumb Tip
@@ -171,7 +158,6 @@ class SupremGestureController {
       const indexTip = landmarks[8];
       const thumbTip = landmarks[4];
       const middleTip = landmarks[12];
-      const wrist = landmarks[0];
 
       // Mirror X coordinate because webcam feed is horizontally flipped
       const screenW = window.innerWidth;
@@ -222,14 +208,24 @@ class SupremGestureController {
       }
       this.prevHandY = handCenterY;
 
+      // Dwell click for steady hand on target
+      const speed = Math.abs(this.targetX - this.cursorX) + Math.abs(this.targetY - this.cursorY);
+      if (speed < 8) {
+        this.handleDwellClick();
+      } else {
+        this.cancelDwell();
+      }
+
     } else {
+      this.handDetected = false;
       this.prevHandY = null;
+      this.cancelDwell();
     }
   }
 
   // Optical Fallback Cursor Feeder (from optical motion tracker)
   updateFromOpticalMotion(rawX, rawY, isMoving) {
-    if (!this.isActive || this.useMediaPipe) return;
+    if (!this.isActive || this.handDetected) return;
 
     this.targetX = rawX;
     this.targetY = rawY;

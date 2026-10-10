@@ -33,6 +33,7 @@ class SupremApp {
   init() {
     this.cacheDom();
     this.initHUD();
+    this.initLocalLlm();
     this.initSpeechSynthesis();
     this.initSpeechRecognition();
     this.initWebSocket();
@@ -73,6 +74,18 @@ class SupremApp {
     this.dom.alertBanner = document.getElementById('alertBanner');
     this.dom.alertBannerText = document.getElementById('alertBannerText');
 
+    // Local LLM & Quick API Vault Controls
+    this.dom.toggleLocalLlmBtn = document.getElementById('toggleLocalLlmBtn');
+    this.dom.localLlmToggle = document.getElementById('localLlmToggle');
+    this.dom.localLlmStatusText = document.getElementById('localLlmStatusText');
+    this.dom.localLlmUrlInput = document.getElementById('localLlmUrlInput');
+    this.dom.apiProviderQuick = document.getElementById('apiProviderQuick');
+    this.dom.apiKeyQuickInput = document.getElementById('apiKeyQuickInput');
+    this.dom.apiModelQuick = document.getElementById('apiModelQuick');
+    this.dom.saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    this.dom.apiKeyStatusTag = document.getElementById('apiKeyStatusTag');
+    this.dom.apiKeyVisibilityBtn = document.getElementById('apiKeyVisibilityBtn');
+
     // Web Portal & Air-Touch Gesture elements
     this.dom.toggleGestureBtn = document.getElementById('toggleGestureBtn');
     this.dom.openWebPortalBtn = document.getElementById('openWebPortalBtn');
@@ -93,6 +106,69 @@ class SupremApp {
     this.dom.visorVectorText = document.getElementById('visorVectorText');
     this.dom.visorCoordsText = document.getElementById('visorCoordsText');
     this.dom.reticleBox = document.getElementById('reticleBox');
+  }
+
+  initLocalLlm() {
+    const isActive = window.supremBrain?.isLocalLLMActive || false;
+    this.updateLocalLlmUI(isActive);
+
+    if (this.dom.localLlmUrlInput && window.supremBrain?.localLLMUrl) {
+      this.dom.localLlmUrlInput.value = window.supremBrain.localLLMUrl;
+    }
+
+    if (this.dom.apiProviderQuick) {
+      const currentProvider = window.supremBrain?.provider || 'builtin';
+      this.dom.apiProviderQuick.value = isActive ? 'local' : currentProvider;
+    }
+  }
+
+  updateLocalLlmUI(isActive) {
+    if (this.dom.toggleLocalLlmBtn) {
+      this.dom.toggleLocalLlmBtn.classList.toggle('active', isActive);
+    }
+    if (this.dom.localLlmStatusText) {
+      this.dom.localLlmStatusText.textContent = isActive ? 'ACTIVE' : 'OFF';
+    }
+    if (this.dom.localLlmToggle) {
+      this.dom.localLlmToggle.checked = isActive;
+      const wrapper = this.dom.localLlmToggle.closest('.local-ai-toggle-wrapper');
+      if (wrapper) wrapper.classList.toggle('active', isActive);
+    }
+    if (this.dom.apiProviderQuick && isActive) {
+      this.dom.apiProviderQuick.value = 'local';
+    }
+    if (this.dom.apiKeyStatusTag) {
+      if (isActive) {
+        this.dom.apiKeyStatusTag.textContent = 'LOCAL AI (9931)';
+        this.dom.apiKeyStatusTag.classList.add('active');
+      } else {
+        const prov = window.supremBrain?.provider || 'builtin';
+        if (prov === 'builtin') {
+          this.dom.apiKeyStatusTag.textContent = 'OFFLINE';
+          this.dom.apiKeyStatusTag.classList.remove('active');
+        } else {
+          this.dom.apiKeyStatusTag.textContent = prov.toUpperCase();
+          this.dom.apiKeyStatusTag.classList.add('active');
+        }
+      }
+    }
+  }
+
+  setLocalLlmState(newState, silent = false) {
+    if (window.supremBrain) {
+      window.supremBrain.setLocalLLMActive(newState);
+    }
+    this.updateLocalLlmUI(newState);
+
+    if (!silent) {
+      if (newState) {
+        this.addTranscript('system', 'COGNITIVE CORE: ROUTED TO LOCAL LLM (PORT 9931)');
+        this.speak('Local intelligence connected on port 9931, Mr. Moxx.');
+      } else {
+        this.addTranscript('system', 'COGNITIVE CORE: RESTORED TO DEFAULT PROVIDER');
+        this.speak('Restored default cognitive provider, Mr. Moxx.');
+      }
+    }
   }
 
   initHUD() {
@@ -603,9 +679,9 @@ class SupremApp {
           this.drawHolographicTrackingBox(this.smoothedX, this.smoothedY, 0, 'LOCKED');
         }
 
-        // Feed to Holographic Air-Touch Gesture Controller
+        // Feed optical motion fallback to Gesture Controller
+        // (Hand Landmarker runs its own loop; this only drives the cursor when no hand is detected)
         if (window.supremGesture) {
-          window.supremGesture.sendFrame(video);
           const isMoving = motionPixels > 80;
           window.supremGesture.updateFromOpticalMotion(this.smoothedX, this.smoothedY, isMoving);
         }
@@ -839,9 +915,66 @@ class SupremApp {
       });
     }
 
+    // Local LLM Header Button
+    if (this.dom.toggleLocalLlmBtn) {
+      this.dom.toggleLocalLlmBtn.addEventListener('click', () => {
+        window.jarvisAudio.playClick();
+        const nextState = !window.supremBrain.isLocalLLMActive;
+        this.setLocalLlmState(nextState);
+      });
+    }
+
+    // Local LLM Inline Checkbox Toggle
+    if (this.dom.localLlmToggle) {
+      this.dom.localLlmToggle.addEventListener('change', (e) => {
+        window.jarvisAudio.playClick();
+        this.setLocalLlmState(e.target.checked);
+      });
+    }
+
+    // Quick API Vault on Left Panel
+    if (this.dom.saveApiKeyBtn) {
+      this.dom.saveApiKeyBtn.addEventListener('click', () => {
+        window.jarvisAudio.playClick();
+        const provider = this.dom.apiProviderQuick?.value || 'builtin';
+        const apiKey = this.dom.apiKeyQuickInput?.value.trim() || '';
+        const model = this.dom.apiModelQuick?.value.trim() || '';
+
+        if (provider === 'local') {
+          this.setLocalLlmState(true);
+        } else {
+          this.setLocalLlmState(false, true);
+          window.supremBrain.setLLMConfig(provider, apiKey, model);
+          this.addTranscript('system', `API VAULT ACTIVATED: ${provider.toUpperCase()}`);
+          this.updateLocalLlmUI(false);
+        }
+
+        this.dom.saveApiKeyBtn.classList.add('saved');
+        setTimeout(() => this.dom.saveApiKeyBtn.classList.remove('saved'), 2000);
+      });
+    }
+
+    // API Key visibility toggle
+    if (this.dom.apiKeyVisibilityBtn && this.dom.apiKeyQuickInput) {
+      this.dom.apiKeyVisibilityBtn.addEventListener('click', () => {
+        const isPass = this.dom.apiKeyQuickInput.type === 'password';
+        this.dom.apiKeyQuickInput.type = isPass ? 'text' : 'password';
+      });
+    }
+
     // Settings Modal
     this.dom.openSettingsBtn.addEventListener('click', () => {
       window.jarvisAudio.playClick();
+      const provSelect = document.getElementById('llmProviderSelect');
+      if (provSelect) {
+        provSelect.value = window.supremBrain.isLocalLLMActive ? 'local' : (window.supremBrain.provider || 'builtin');
+      }
+      const keyInput = document.getElementById('apiKeyInput');
+      if (keyInput) keyInput.value = window.supremBrain.apiKey || '';
+      const modelInput = document.getElementById('modelNameInput');
+      if (modelInput) modelInput.value = window.supremBrain.model || '';
+      const localUrlInput = document.getElementById('localLlmUrlInput');
+      if (localUrlInput) localUrlInput.value = window.supremBrain.localLLMUrl || 'http://127.0.0.1:9931/v1/chat/completions';
       this.dom.settingsModal.classList.add('active');
     });
 
@@ -917,8 +1050,16 @@ class SupremApp {
       const apiKey = document.getElementById('apiKeyInput').value.trim();
       const model = document.getElementById('modelNameInput').value.trim();
       const ollamaUrl = document.getElementById('ollamaUrlInput').value.trim();
+      const localUrl = document.getElementById('localLlmUrlInput')?.value.trim();
 
-      window.supremBrain.setLLMConfig(provider, apiKey, model, ollamaUrl);
+      window.supremBrain.setLLMConfig(provider, apiKey, model, ollamaUrl, localUrl, model);
+
+      if (provider === 'local') {
+        this.setLocalLlmState(true);
+      } else {
+        this.setLocalLlmState(false, true);
+        this.updateLocalLlmUI(false);
+      }
 
       const voiceSelect = document.getElementById('voiceSelect');
       if (voiceSelect && voiceSelect.value !== '') {
