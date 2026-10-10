@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="S.U.P.R.E.M. - Autonomous Moxx Industries Holographic AI Assistant with Real-time PC Telemetry, Voice Interaction, Optical Movement Tracking, and Multi-Engine Intelligence">
+  <title>S.U.P.R.E.M. // Moxx Industries Mark LXXXV HUD System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Emergency / Protocol Alert Banner -->
+  <div id="alertBanner" class="alert-banner" role="alert" aria-live="assertive">
+    <span id="alertBannerText">PROTOCOL VERONICA // HULKBUSTER DEPLOYED</span>
+  </div>
+
+  <div class="hud-container">
+    <!-- ====================================================================
+         TOP STATUS HEADER
+         ==================================================================== -->
+    <header class="hud-header">
+      <div class="header-brand">
+        <div class="stark-logo">
+          <svg class="stark-emblem" viewBox="0 0 100 100">
+            <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="currentColor" stroke-width="6"/>
+            <polygon points="50,20 80,35 80,65 50,80 20,65 20,35" fill="none" stroke="currentColor" stroke-width="4"/>
+            <circle cx="50" cy="50" r="14" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>S.U.P.R.E.M.</h1>
+          <span class="subtext">MOXX INDUSTRIES // MARK LXXXV OS // REV 4.2</span>
+        </div>
+      </div>
+
+      <div class="header-status-grid">
+        <div class="status-badge">
+          <div id="networkIndicator" class="status-indicator"></div>
+          <span id="networkText">MOXX SAT-LINK ESTABLISHED</span>
+        </div>
+        <div class="status-badge">
+          <span style="color: var(--text-muted);">COMMANDER:</span>
+          <span style="color: var(--stark-cyan); font-weight: bold;">MR. MOXX</span>
+        </div>
+        <div class="status-badge">
+          <span style="color: var(--text-muted);">HOST:</span>
+          <span id="hostnameVal" style="color: var(--stark-gold);">INITIALIZING...</span>
+        </div>
+        <div class="status-badge">
+          <span style="color: var(--text-muted);">UPTIME:</span>
+          <span id="uptimeVal" style="color: var(--stark-gold);">0h 0m 0s</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="activateSensorsBtn" class="hud-btn-icon" style="background: rgba(0, 229, 255, 0.22); border-color: var(--stark-cyan); color: #fff; font-weight: 700;" title="Initialize Microphone & Optical Movement Tracking">
+          ⚡ LINK SENSORS
+        </button>
+        <button id="toggleGestureBtn" class="hud-btn-icon" title="Toggle Air-Touch Hand Gesture Cursor">
+          🖐️ AIR-TOUCH
+        </button>
+        <button id="openWebPortalBtn" class="hud-btn-icon" title="Open Holographic Web Access Portal">
+          🌐 WEB PORTAL
+        </button>
+        <button id="toggleCameraBtn" class="hud-btn-icon" title="Toggle Optical Visor Camera HUD">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          OPTICAL VISOR
+        </button>
+        <button id="muteBtn" class="hud-btn-icon" title="Toggle Sound FX">🔊 AUDIO: ACTIVE</button>
+        <button id="openSettingsBtn" class="hud-btn-icon" title="Configure AI Intelligence and Voice">⚙️ CONFIG</button>
+      </div>
+    </header>
+
+    <!-- ====================================================================
+         MAIN HUD GRID (3 COLUMNS)
+         ==================================================================== -->
+    <main class="hud-main">
+      <!-- ------------------------------------------------------------------
+           LEFT COLUMN: MOXX PROTOCOLS & WINDOWS LAUNCHERS
+           ------------------------------------------------------------------ -->
+      <aside class="hud-panel left-column">
+        <div class="panel-title-bar">
+          <h2 class="panel-title">MOXX PROTOCOLS</h2>
+          <span class="panel-tag">DEFENSE</span>
+        </div>
+
+        <div class="protocol-grid">
+          <button class="protocol-card danger" data-command="protocol veronica" id="btnVeronica">
+            <span class="protocol-code">PRT-01 // ORBITAL</span>
+            <span class="protocol-name">VERONICA</span>
+          </button>
+          <button class="protocol-card danger" data-command="clean slate protocol" id="btnCleanSlate">
+            <span class="protocol-code">PRT-02 // DETONATE</span>
+            <span class="protocol-name">CLEAN SLATE</span>
+          </button>
+          <button class="protocol-card" data-command="house party protocol" id="btnHouseParty">
+            <span class="protocol-code">PRT-03 // SQUADRON</span>
+            <span class="protocol-name">HOUSE PARTY</span>
+          </button>
+          <button class="protocol-card" data-command="combat mode" id="btnCombat">
+            <span class="protocol-code">PRT-04 // TACTICAL</span>
+            <span class="protocol-name">COMBAT MODE</span>
+          </button>
+          <button class="protocol-card" data-command="stealth mode" id="btnStealth">
+            <span class="protocol-code">PRT-05 // RECON</span>
+            <span class="protocol-name">STEALTH RECON</span>
+          </button>
+          <button class="protocol-card" data-command="normal mode" id="btnNormal">
+            <span class="protocol-code">PRT-06 // RESTORE</span>
+            <span class="protocol-name">STANDBY MODE</span>
+          </button>
+        </div>
+
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <h2 class="panel-title">WORKSTATION BRIDGE</h2>
+          <span class="panel-tag">WIN-OS</span>
+        </div>
+
+        <div class="apps-grid">
+          <button class="app-launcher-btn" data-app="calculator" id="btnAppCalc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="8" y1="18" x2="8" y2="18"></line><line x1="12" y1="18" x2="12" y2="18"></line></svg>
+            CALCULATOR
+          </button>
+          <button class="app-launcher-btn" data-app="notepad" id="btnAppNotepad">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            NOTEPAD
+          </button>
+          <button class="app-launcher-btn" data-app="terminal" id="btnAppTerminal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            TERMINAL
+          </button>
+          <button class="app-launcher-btn" data-app="chrome" id="btnAppChrome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="21.17" y1="8" x2="12" y2="8"></line><line x1="3.95" y1="6.06" x2="8.54" y2="14"></line><line x1="10.88" y1="21.94" x2="15.46" y2="14"></line></svg>
+            BROWSER
+          </button>
+          <button class="app-launcher-btn" data-app="taskmgr" id="btnAppTaskmgr">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            TASK MGR
+          </button>
+          <button class="app-launcher-btn" data-app="explorer" id="btnAppExplorer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            FILES
+          </button>
+        </div>
+
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <h2 class="panel-title">ARC POWER CORE</h2>
+          <span class="panel-tag">MARK-VII</span>
+        </div>
+
+        <div class="power-metrics-grid">
+          <div class="power-metric-box">
+            <div class="metric-label">OUTPUT RATING</div>
+            <div class="metric-val">8.42 GJ/s</div>
+          </div>
+          <div class="power-metric-box">
+            <div class="metric-label">CORE TEMP</div>
+            <div class="metric-val" style="color: var(--stark-gold);">36.8°C</div>
+          </div>
+          <div class="power-metric-box">
+            <div class="metric-label">FLUX EFFICIENCY</div>
+            <div class="metric-val">99.8%</div>
+          </div>
+          <div class="power-metric-box">
+            <div class="metric-label">COIL HARMONICS</div>
+            <div class="metric-val">OPTIMAL</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ------------------------------------------------------------------
+           CENTER COLUMN: ARC REACTOR CORE & VOICE CONSOLE
+           ------------------------------------------------------------------ -->
+      <section class="center-column">
+        <!-- Interactive Arc Reactor Canvas Stage -->
+        <div class="hud-panel reactor-stage-container">
+          <div class="arc-canvas-wrapper" id="arcReactorTrigger" title="Click to trigger Diagnostics Sweep">
+            <canvas id="arcReactorCanvas"></canvas>
+            <span class="reactor-click-hint">[ TAP ARC REACTOR FOR DIAGNOSTICS ]</span>
+          </div>
+
+          <div class="jarvis-state-badge" id="jarvisStateBadge">
+            <div class="status-indicator"></div>
+            <span id="jarvisStateText">STANDBY</span>
+          </div>
+        </div>
+
+        <!-- Voice Interaction & Terminal Console -->
+        <div class="voice-console">
+          <div class="panel-title-bar">
+            <h2 class="panel-title">TELEMETRY TRANSCRIPT & COMMAND RELAY</h2>
+            <div class="hands-free-toggle" title="Automatically keep listening for 'Suprem'">
+              <input type="checkbox" id="handsFreeToggle" checked>
+              <label for="handsFreeToggle">WAKE WORD: "SUPREM"</label>
+            </div>
+          </div>
+
+          <!-- Transcript log -->
+          <div class="transcript-box" id="transcriptBox"></div>
+
+          <!-- Input bar and Mic Trigger -->
+          <div class="console-controls">
+            <button id="micToggleBtn" class="mic-toggle-btn" title="Toggle Voice Recognition (Call 'Suprem')">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
+              </svg>
+            </button>
+
+            <div class="command-input-wrapper">
+              <input type="text" id="commandInput" class="command-input" placeholder="Call 'Suprem' or type a command (e.g. 'track me', 'open calculator', 'system status')...">
+              <button id="sendBtn" class="send-btn" title="Execute Command">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------------
+           RIGHT COLUMN: HARDWARE TELEMETRY & OPTICAL MOVEMENT TRACKER
+           ------------------------------------------------------------------ -->
+      <aside class="hud-panel right-column">
+        <div class="panel-title-bar">
+          <h2 class="panel-title">HARDWARE TELEMETRY</h2>
+          <span class="panel-tag">REAL-TIME</span>
+        </div>
+
+        <div class="telemetry-row">
+          <!-- CPU Gauge -->
+          <div class="radial-gauge-card">
+            <div class="gauge-canvas-box">
+              <canvas id="cpuGaugeCanvas" width="72" height="72"></canvas>
+              <span id="cpuVal" class="gauge-pct">0%</span>
+            </div>
+            <div class="gauge-label">CPU LOAD</div>
+            <div id="cpuCores" class="gauge-sub">ACTIVE CORES</div>
+          </div>
+
+          <!-- RAM Gauge -->
+          <div class="radial-gauge-card">
+            <div class="gauge-canvas-box">
+              <canvas id="ramGaugeCanvas" width="72" height="72"></canvas>
+              <span id="ramVal" class="gauge-pct">0%</span>
+            </div>
+            <div class="gauge-label">MEMORY</div>
+            <div id="ramDetails" class="gauge-sub">0 / 0 GB</div>
+          </div>
+        </div>
+
+        <!-- Real-Time Optical Movement Tracker Panel -->
+        <div class="panel-title-bar" style="margin-top: 4px;">
+          <h2 class="panel-title">OPTICAL MOVEMENT TRACKER</h2>
+          <span class="panel-tag" id="trackingStatusBadge">STANDBY</span>
+        </div>
+
+        <div class="suit-schematic-box" id="opticalTrackerBox" style="background: rgba(4, 18, 36, 0.65); border: 1px solid var(--border-cyan);">
+          <div class="suit-node-list">
+            <div class="suit-node">
+              <span class="label">TARGET SUBJECT</span>
+              <span class="val" style="color: var(--stark-gold);">MR. MOXX</span>
+            </div>
+            <div class="suit-node">
+              <span class="label">OPTICAL SENSORS</span>
+              <span class="val" id="opticalSensorState">INITIALIZING...</span>
+            </div>
+            <div class="suit-node">
+              <span class="label">MOVEMENT VECTOR</span>
+              <span class="val" id="movementVectorVal">STATIONARY</span>
+            </div>
+            <div class="suit-node">
+              <span class="label">COORDINATES</span>
+              <span class="val" id="movementCoordsVal">X: 0  Y: 0</span>
+            </div>
+            <div class="suit-node">
+              <span class="label">AIR-TOUCH GESTURE</span>
+              <span class="val" id="gestureStatusBadge" style="color: var(--stark-gold);">PINCH TO CLICK</span>
+            </div>
+            <div class="suit-node">
+              <span class="label">VELOCITY</span>
+              <span class="val" id="movementSpeedVal">0 px/s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tactical Orbital Radar Scope -->
+        <div class="panel-title-bar" style="margin-top: 4px;">
+          <h2 class="panel-title">TACTICAL ORBITAL RADAR</h2>
+          <span class="panel-tag">DEFENSE GRID</span>
+        </div>
+
+        <div class="radar-box">
+          <canvas id="radarCanvas"></canvas>
+        </div>
+
+        <!-- Atmospheric Weather Telemetry -->
+        <div class="weather-card">
+          <div>
+            <div class="weather-city" id="weatherCity">MOXX CITADEL</div>
+            <div class="gauge-sub" id="weatherSub">SCANNING ATMOSPHERE...</div>
+          </div>
+          <div class="weather-temp" id="weatherTemp">21°C</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ====================================================================
+         BOTTOM GLOBAL TICKER
+         ==================================================================== -->
+    <footer class="hud-footer">
+      <div class="ticker-text">
+        <span style="color: #fff;">[SYSTEM]</span>
+        <span>MOXX INDUSTRIES OS v4.2 // SECURITY LEVEL ALPHA // S.U.P.R.E.M. OPTICAL & AUDIO MATRIX READY</span>
+      </div>
+      <div style="font-family: var(--font-mono); color: var(--text-muted);">
+        SUPREM AI v4.2.0-MOXX
+      </div>
+    </footer>
+  </div>
+
+  <!-- ====================================================================
+       OPTICAL VISOR CAMERA MODAL (WITH LIVE MOVEMENT TRACKING OVERLAY)
+       ==================================================================== -->
+  <div id="cameraVisorModal" class="camera-visor-modal">
+    <div class="camera-feed-container">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <canvas id="trackingOverlayCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+      <div class="visor-hud-overlay">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-family: var(--font-display); color: var(--stark-cyan); letter-spacing: 2px;">
+            MOXX OPTICAL VISOR // S.U.P.R.E.M. MOVEMENT TRACKING
+          </div>
+          <button id="closeCameraBtn" class="hud-btn-icon" style="background: rgba(255, 51, 68, 0.4); border-color: var(--stark-crimson); color: #fff;">
+            ✕ CLOSE VISOR
+          </button>
+        </div>
+        <div class="target-reticle" id="reticleBox"></div>
+        <div style="font-family: var(--font-mono); color: var(--stark-cyan); font-size: 0.82rem; display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.6); padding: 6px 12px; border-radius: 3px;">
+          <span>TARGET: <strong style="color: var(--stark-gold);">MR. MOXX</strong></span>
+          <span id="visorVectorText">VECTOR: STATIONARY</span>
+          <span id="visorCoordsText">COORDS: X: 0 Y: 0</span>
+          <span>RANGE: OPTICAL LOCK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       CONFIGURATION MODAL (AI INTELLIGENCE & SPEECH SYNTHESIS)
+       ==================================================================== -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">S.U.P.R.E.M. COGNITIVE CORE & VOICE CONFIG</h3>
+        <button id="closeSettingsBtn" class="close-btn">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label for="llmProviderSelect">COGNITIVE ENGINE PROVIDER</label>
+        <select id="llmProviderSelect" class="form-select">
+          <option value="builtin">Built-in Moxx Heuristic Engine (Instant / Offline)</option>
+          <option value="groq">Groq (Ultra-Low Latency ~200ms / LLaMA 3.3)</option>
+          <option value="gemini">Google Gemini (Gemini 1.5 Flash)</option>
+          <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+          <option value="ollama">Ollama (100% Local Offline LLM)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="apiKeyInput">API KEY (Groq / Gemini / OpenAI)</label>
+        <input type="password" id="apiKeyInput" class="form-input" placeholder="Enter API key for unlimited AI intelligence...">
+        <span style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted);">
+          * Optional: S.U.P.R.E.M. works completely offline for all system tasks, protocols, and Moxx banter without any key.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="modelNameInput">CUSTOM MODEL NAME (Optional)</label>
+        <input type="text" id="modelNameInput" class="form-input" placeholder="e.g. llama-3.3-70b-versatile, gpt-4o, gemini-1.5-flash">
+      </div>
+
+      <div class="form-group">
+        <label for="ollamaUrlInput">OLLAMA ENDPOINT (If using Local Ollama)</label>
+        <input type="text" id="ollamaUrlInput" class="form-input" value="http://localhost:11434">
+      </div>
+
+      <div class="form-group">
+        <label for="voiceSelect">SPEECH SYNTHESIS VOICE (British Butler Preferred)</label>
+        <select id="voiceSelect" class="form-select"></select>
+      </div>
+
+      <div class="modal-footer">
+        <button id="saveSettingsBtn" class="btn-primary">SAVE & REBOOT COGNITIVE CORE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       HOLOGRAPHIC WEB ACCESS PORTAL (AIR-TOUCH BROWSER)
+       ==================================================================== -->
+  <div id="webPortalModal" class="web-portal-modal">
+    <div class="web-portal-card">
+      <div class="web-portal-header">
+        <div style="font-family: var(--font-display); color: var(--stark-cyan); letter-spacing: 2px; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          MOXX QUANTUM WEB ACCESS // HOLOGRAPHIC AIR-TOUCH
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--stark-gold);">[AIR GESTURE: POINT & PINCH]</span>
+          <button id="closeWebPortalBtn" class="hud-btn-icon" style="background: rgba(255, 51, 68, 0.4); border-color: var(--stark-crimson); color: #fff;">
+            ✕ CLOSE
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & URL bar -->
+      <div class="web-search-bar-row">
+        <button id="webBackBtn" class="hud-btn-icon" title="Go Back">◀</button>
+        <button id="webForwardBtn" class="hud-btn-icon" title="Go Forward">▶</button>
+        <input type="text" id="webUrlInput" class="web-search-input" placeholder="Enter search query or URL (e.g. 'Artificial Intelligence', 'SpaceX', 'wikipedia.org')...">
+        <button id="webSearchBtn" class="btn-primary" style="padding: 10px 18px;">SEARCH / NAVIGATE</button>
+      </div>
+
+      <!-- Quick Access Holographic Touch Tiles -->
+      <div class="web-quick-tiles-grid">
+        <button class="web-quick-tile" data-url="https://en.wikipedia.org/wiki/Tony_Stark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          WIKIPEDIA
+        </button>
+        <button class="web-quick-tile" data-url="https://www.google.com/search?igu=1&q=latest+technology+news">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          TECH NEWS
+        </button>
+        <button class="web-quick-tile" data-url="https://www.bing.com/news">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          GLOBAL NEWS
+        </button>
+        <button class="web-quick-tile" data-url="https://images.nasa.gov">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path></svg>
+          NASA RADAR
+        </button>
+        <button class="web-quick-tile" data-url="https://news.ycombinator.com">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          HACKER NEWS
+        </button>
+        <button class="web-quick-tile" data-url="https://www.google.com/search?igu=1&q=Iron+Man+Armor+MK+85">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          MOXX ARCHIVE
+        </button>
+      </div>
+
+      <!-- Web Viewer Frame -->
+      <div class="web-viewer-container">
+        <iframe id="webViewerFrame" src="https://en.wikipedia.org/wiki/Tony_Stark" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      </div>
+
+      <!-- Gesture Help Footbar -->
+      <div class="web-gesture-instructions">
+        <div class="gesture-hint-item">
+          <span>👆 <strong>POINT FINGER:</strong> Move Cursor</span>
+        </div>
+        <div class="gesture-hint-item">
+          <span>🤏 <strong>PINCH (THUMB + INDEX):</strong> Air Touch / Click</span>
+        </div>
+        <div class="gesture-hint-item">
+          <span>⏱️ <strong>HOLD ON TARGET:</strong> Dwell Auto-Tap</span>
+        </div>
+        <div class="gesture-hint-item">
+          <span>↕️ <strong>HAND SWIPE:</strong> Scroll Page</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="gesture-controller.js"></script>
+  <script src="sound-effects.js"></script>
+  <script src="hud-visualizer.js"></script>
+  <script src="jarvis-brain.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
