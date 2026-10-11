@@ -295,51 +295,63 @@ app.post('/api/chat-proxy', async (req, res) => {
       const data = await response.json();
       return res.json(data);
     } else if (provider === 'local') {
-      const localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:8080/v1/messages';
-      const localModel = model || process.env.LOCAL_LLM_MODEL || 'local-model';
-      const isAnthropicType = req.body.llmType === 'anthropic' || process.env.LOCAL_LLM_TYPE === 'anthropic' || localUrl.includes('/messages') || localUrl.includes('anthropic');
+      // Normalize the local URL:
+      // 1. If it still points to /v1/messages (old Anthropic path), rewrite to /v1/chat/completions
+      // 2. If the URL has no path (e.g. https://host.ts.net/), append the correct path
+      // 3. Support Tailscale URLs like https://moxxs-laptop.tailea601b.ts.net/
+      let localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:8080/v1/chat/completions';
 
-      let localBody;
-      let headers = { 'Content-Type': 'application/json' };
-
-      if (isAnthropicType) {
-        const systemMessage = messages.find(m => m.role === 'system')?.content;
-        const anthropicMessages = messages
-          .filter(m => m.role !== 'system')
-          .map(m => ({
-            role: m.role === 'user' ? 'user' : 'assistant',
-            content: m.content
-          }));
-        localBody = {
-          model: localModel,
-          max_tokens: req.body.max_tokens || 1024,
-          messages: anthropicMessages.length ? anthropicMessages : [{ role: 'user', content: 'Status report' }]
-        };
-        if (systemMessage) localBody.system = systemMessage;
-        if (req.body.temperature !== undefined) localBody.temperature = req.body.temperature;
-        headers['anthropic-version'] = '2023-06-01';
-        if (apiKey || process.env.ANTHROPIC_API_KEY) {
-          headers['x-api-key'] = apiKey || process.env.ANTHROPIC_API_KEY;
-        }
-      } else {
-        localBody = {
-          model: localModel,
-          messages,
-          temperature: req.body.temperature !== undefined ? req.body.temperature : 0.2,
-          max_tokens: req.body.max_tokens || 300
-        };
+      // Fix legacy /v1/messages → /v1/chat/completions
+      if (localUrl.includes('/v1/messages')) {
+        localUrl = localUrl.replace('/v1/messages', '/v1/chat/completions');
       }
+
+      // If the URL has no API path, append the OpenAI-compatible path
+      try {
+        const urlObj = new URL(localUrl);
+        if (urlObj.pathname === '/' || urlObj.pathname === '') {
+          localUrl = localUrl.replace(/\/$/, '') + '/v1/chat/completions';
+        }
+      } catch (_) { /* ignore bad URLs */ }
+
+      const localModel = model || process.env.LOCAL_LLM_MODEL || 'Jackrong/Qwopus3.5-9B-Coder-GGUF';
+
+      // Always use OpenAI-compatible format for llama-server
+      const localBody = {
+        model: localModel,
+        messages,
+        temperature: req.body.temperature !== undefined ? req.body.temperature : 0.7,
+        max_tokens: req.body.max_tokens || 2048
+      };
+      const headers = { 'Content-Type': 'application/json' };
+
+      console.log(`[LOCAL LLM] → ${localUrl} | model: ${localModel}`);
 
       const response = await fetch(localUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(localBody)
       });
+
       if (!response.ok) {
         const errorText = await response.text();
-        return res.status(response.status).json({ error: `Local LLM error: ${response.status}`, details: errorText });
+        console.error(`[LOCAL LLM] Error ${response.status}:`, errorText);
+        return res.status(response.status).json({
+          error: `Local LLM error: ${response.status}`,
+          details: errorText,
+          targetUrl: localUrl
+        });
       }
+
       const data = await response.json();
+
+      // Strip thinking tokens (<think>...</think>) from Qwopus / Qwen / DeepSeek reasoning models
+      if (data.choices?.[0]?.message?.content) {
+        data.choices[0].message.content = data.choices[0].message.content
+          .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .trim();
+      }
+
       return res.json(data);
     } else {
       return res.status(400).json({ error: 'Unsupported provider' });

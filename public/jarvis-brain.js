@@ -12,11 +12,18 @@ class SupremBrain {
     this.ollamaUrl = localStorage.getItem('suprem_ollama_url') || localStorage.getItem('jarvis_ollama_url') || 'http://localhost:11434';
     this.isLocalLLMActive = localStorage.getItem('suprem_local_llm_active') === 'true';
     let storedLocalUrl = localStorage.getItem('suprem_local_llm_url');
-    if (!storedLocalUrl || storedLocalUrl.includes('9931')) {
-      storedLocalUrl = 'http://127.0.0.1:8080/v1/messages';
+    // Always reset to OpenAI-compatible endpoint (llama-server uses /v1/chat/completions)
+    if (!storedLocalUrl || storedLocalUrl.includes('9931') || storedLocalUrl.includes('/v1/messages')) {
+      storedLocalUrl = 'http://127.0.0.1:8080/v1/chat/completions';
+      localStorage.setItem('suprem_local_llm_url', storedLocalUrl);
     }
     this.localLLMUrl = storedLocalUrl;
-    this.localLLMModel = localStorage.getItem('suprem_local_llm_model') || 'local-model';
+    let storedLocalModel = localStorage.getItem('suprem_local_llm_model');
+    if (!storedLocalModel || storedLocalModel === 'local-model') {
+      storedLocalModel = 'Jackrong/Qwopus3.5-9B-Coder-GGUF';
+      localStorage.setItem('suprem_local_llm_model', storedLocalModel);
+    }
+    this.localLLMModel = storedLocalModel;
 
     this.conversationHistory = [
       {
@@ -418,9 +425,9 @@ You are in full command of Moxx Industries technology, workstation controls, and
       const payload = {
         provider: activeProvider,
         apiKey: this.apiKey,
-        model: isLocal ? (this.localLLMModel || 'local-model') : this.model,
+        model: isLocal ? (this.localLLMModel || 'Jackrong/Qwopus3.5-9B-Coder-GGUF') : this.model,
         messages: this.conversationHistory,
-        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:8080/v1/messages') : this.ollamaUrl,
+        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:8080/v1/chat/completions') : this.ollamaUrl,
         temperature: isLocal ? 0.2 : 0.7,
         max_tokens: isLocal ? 1024 : 1024
       };
