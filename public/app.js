@@ -28,6 +28,16 @@ class SupremApp {
     this.motionHistory = [];
 
     this.dom = {};
+
+    // Single Smooth Natural Voice Configuration
+    this.voiceConfig = {
+      pitch: 0.98,
+      rate: 0.98,
+      volume: 1.0,
+      comlinkEffect: false,
+      roboticTone: false,
+      voiceIndex: -1
+    };
   }
 
   init() {
@@ -41,10 +51,15 @@ class SupremApp {
     this.fetchWeather();
     this.drawGauges(0, 0);
 
+    // Initialize Language
+    const initialLang = window.supremBrain?.currentLanguage || 'en';
+    this.onLanguageChanged(initialLang, false);
+    this.initMicrophoneAcoustics();
+
     // Boot message
-    this.addTranscript('system', 'INITIALIZING MOXX INDUSTRIES S.U.P.R.E.M. v4.2.0...');
+    this.addTranscript('system', 'INITIALIZING MOXX INDUSTRIES V.E.X. [MVEX OS]...');
     setTimeout(() => {
-      this.addTranscript('suprem', 'All systems online, Mr. Moxx. S.U.P.R.E.M. is ready for your command.');
+      this.addTranscript('suprem', 'All systems online, Mr. Moxx. V.E.X. is ready for your command.');
     }, 600);
   }
 
@@ -74,17 +89,11 @@ class SupremApp {
     this.dom.alertBanner = document.getElementById('alertBanner');
     this.dom.alertBannerText = document.getElementById('alertBannerText');
 
-    // Local LLM & Quick API Vault Controls
+    // Local LLM Header Controls
     this.dom.toggleLocalLlmBtn = document.getElementById('toggleLocalLlmBtn');
     this.dom.localLlmToggle = document.getElementById('localLlmToggle');
     this.dom.localLlmStatusText = document.getElementById('localLlmStatusText');
     this.dom.localLlmUrlInput = document.getElementById('localLlmUrlInput');
-    this.dom.apiProviderQuick = document.getElementById('apiProviderQuick');
-    this.dom.apiKeyQuickInput = document.getElementById('apiKeyQuickInput');
-    this.dom.apiModelQuick = document.getElementById('apiModelQuick');
-    this.dom.saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-    this.dom.apiKeyStatusTag = document.getElementById('apiKeyStatusTag');
-    this.dom.apiKeyVisibilityBtn = document.getElementById('apiKeyVisibilityBtn');
 
     // Web Portal & Air-Touch Gesture elements
     this.dom.toggleGestureBtn = document.getElementById('toggleGestureBtn');
@@ -106,6 +115,19 @@ class SupremApp {
     this.dom.visorVectorText = document.getElementById('visorVectorText');
     this.dom.visorCoordsText = document.getElementById('visorCoordsText');
     this.dom.reticleBox = document.getElementById('reticleBox');
+
+    // 3D Arc Reactor Stage Controls
+    this.dom.toggleHandGestureBtn = document.getElementById('toggleHandGestureBtn');
+    this.dom.explodeLayersBtn = document.getElementById('explodeLayersBtn');
+    this.dom.resetReactorViewBtn = document.getElementById('resetReactorViewBtn');
+    this.dom.arcGestureBadge = document.getElementById('arcGestureBadge');
+
+    // Voice Testing & Multilingual Elements
+    this.dom.quickTestVoiceBtn = document.getElementById('quickTestVoiceBtn');
+    this.dom.modalTestVoiceBtn = document.getElementById('modalTestVoiceBtn');
+    this.dom.hudLanguageSelect = document.getElementById('hudLanguageSelect');
+    this.dom.settingsLanguageSelect = document.getElementById('settingsLanguageSelect');
+    this.dom.arcWaveBadge = document.getElementById('arcWaveBadge');
   }
 
   initLocalLlm() {
@@ -180,13 +202,17 @@ class SupremApp {
   }
 
   initHUD() {
-    window.hudVisualizer.init('arcReactorCanvas', 'radarCanvas');
+    if (window.arcReactor3D) {
+      window.arcReactor3D.init('arcReactorTrigger', 'arcReactorCanvas');
+    }
+    window.hudVisualizer.init('arcReactorCanvas', 'netSpeedCanvas');
     if (window.supremGesture) {
       window.supremGesture.init('cameraVideo');
     }
   }
 
-  // British Speech Synthesis Setup
+  // Load Saved Voice Configuration from LocalStorage
+  // Speech Synthesis & Dedicated Single Smooth Voice Engine
   initSpeechSynthesis() {
     if (!('speechSynthesis' in window)) {
       console.warn('Speech synthesis not supported in this browser.');
@@ -195,57 +221,331 @@ class SupremApp {
 
     const loadVoices = () => {
       this.speechSynthesisVoices = window.speechSynthesis.getVoices();
-      const britishVoice = this.speechSynthesisVoices.find(v => 
-        (v.lang === 'en-GB' || v.lang.startsWith('en_GB') || v.name.toLowerCase().includes('british') || v.name.toLowerCase().includes('uk')) &&
-        (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('george') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('oliver'))
-      ) || this.speechSynthesisVoices.find(v => v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB'))
-        || this.speechSynthesisVoices.find(v => v.lang.startsWith('en'));
+      if (!this.speechSynthesisVoices || this.speechSynthesisVoices.length === 0) return;
 
-      this.selectedVoice = britishVoice || this.speechSynthesisVoices[0];
-      this.populateVoiceSelect();
+      this.selectSmoothVoice();
     };
 
     window.speechSynthesis.onvoiceschanged = loadVoices;
     loadVoices();
   }
 
-  populateVoiceSelect() {
-    const select = document.getElementById('voiceSelect');
-    if (!select) return;
-    select.innerHTML = '';
-    this.speechSynthesisVoices.forEach((v, idx) => {
-      const opt = document.createElement('option');
-      opt.value = idx;
-      opt.textContent = `${v.name} (${v.lang})`;
-      if (v === this.selectedVoice) opt.selected = true;
-      select.appendChild(opt);
-    });
+  // Pick the single highest-fidelity, smoothest natural voice
+  selectSmoothVoice() {
+    if (!this.speechSynthesisVoices || this.speechSynthesisVoices.length === 0) return;
+    const currentLang = window.supremBrain?.currentLanguage || 'en';
+    const langInfo = window.SUPREM_LANGUAGES?.[currentLang] || { speechCode: 'en-US' };
+    const prefix = (langInfo.speechCode || 'en').split('-')[0].toLowerCase();
+
+    // Prioritized list of the smoothest natural voices (neural/humanoid/fluent)
+    const smoothPatterns = [
+      'natural',          // Microsoft Natural neural voices (ultra-smooth)
+      'online (natural)',
+      'christopher',      // Natural smooth male
+      'guy',              // Natural calm voice
+      'george',           // UK crisp & smooth
+      'daniel',           // Natural British
+      'google uk english male',
+      'google us english',
+      'david',
+      'mark',
+      'alex'
+    ];
+
+    let smoothVoice = null;
+
+    // If active language is non-English, find the best native speaker for that language
+    if (currentLang !== 'en') {
+      smoothVoice = this.speechSynthesisVoices.find(v => {
+        const vLang = v.lang.toLowerCase();
+        return vLang.startsWith(prefix) || vLang.includes(currentLang);
+      });
+    }
+
+    // Try finding top smooth natural voice
+    if (!smoothVoice) {
+      for (const pat of smoothPatterns) {
+        smoothVoice = this.speechSynthesisVoices.find(v => {
+          const vName = v.name.toLowerCase();
+          return vName.includes(pat) && (v.lang.toLowerCase().startsWith('en') || v.lang.toLowerCase().startsWith(prefix));
+        });
+        if (smoothVoice) break;
+      }
+    }
+
+    // Fallback: any English voice or first available voice
+    if (!smoothVoice) {
+      smoothVoice = this.speechSynthesisVoices.find(v => v.lang.toLowerCase().startsWith('en')) || this.speechSynthesisVoices[0];
+    }
+
+    if (smoothVoice) {
+      this.selectedVoice = smoothVoice;
+      this.voiceConfig.voiceIndex = this.speechSynthesisVoices.indexOf(smoothVoice);
+      console.log(`[V.E.X. Smooth Voice] Calibrated to: ${smoothVoice.name} (${smoothVoice.lang})`);
+    }
   }
 
-  speak(text) {
+  // =========================================================================
+  // MULTILINGUAL & PERSONALITY COGNITIVE CONTROLLER
+  // =========================================================================
+  onLanguageChanged(langCode, shouldSpeak = false) {
+    if (!window.SUPREM_LANGUAGES || !window.SUPREM_LANGUAGES[langCode]) return;
+    const langInfo = window.SUPREM_LANGUAGES[langCode];
+
+    window.supremBrain.setLanguage(langCode);
+
+    // Update speech recognition transcription language
+    if (this.recognition) {
+      this.recognition.lang = langInfo.speechCode;
+      console.log(`[Speech Recognition] Target language set to: ${langInfo.speechCode}`);
+      if (this.isListening) {
+        try {
+          this.recognition.stop();
+          setTimeout(() => this.recognition.start(), 200);
+        } catch (e) {}
+      }
+    }
+
+    // Calibrate single smooth voice for active language
+    this.selectSmoothVoice();
+
+    // Two-way UI dropdown sync
+    if (this.dom.hudLanguageSelect) this.dom.hudLanguageSelect.value = langCode;
+    if (this.dom.settingsLanguageSelect) this.dom.settingsLanguageSelect.value = langCode;
+
+    if (shouldSpeak) {
+      const ackReplies = {
+        ml: 'മലയാളം ഭാഷ സജീവമാക്കി, മോക്സ് സാർ.',
+        hi: 'हिन्दी भाषा सक्रिय की गई है, मॉक्स सर।',
+        ta: 'தமிழ் மொழி செயல்படுத்தப்பட்டது, மோக்ஸ் சார்.',
+        te: 'తెలుగు భాష సక్రియం చేయబడింది, మోక్స్ సర్.',
+        es: 'Idioma español activado, Señor Moxx.',
+        ja: '日本語が有効化されました、モックス様。',
+        de: 'Deutsche Sprache aktiviert, Herr Moxx.',
+        fr: 'Langue française activée, Monsieur Moxx.',
+        ar: 'تم تفعيل اللغة العربية، السيد موكس.',
+        en: 'English language protocol active, Mr. Moxx.'
+      };
+      const msg = ackReplies[langCode] || `Language set to ${langInfo.name}, Mr. Moxx.`;
+      this.addTranscript('ai', msg);
+      this.speak(msg, langCode);
+    }
+  }
+
+  // Real-Time Microphone Acoustic Stream for 3D Wave Arc Reactor
+  async initMicrophoneAcoustics() {
+    try {
+      if (this.micInitialized) return;
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        this.micInitialized = true;
+        if (window.jarvisAudio) {
+          window.jarvisAudio.connectMicrophone(stream);
+        }
+      }
+    } catch (err) {
+      console.warn('[S.U.P.R.E.M.] Mic acoustic link notice:', err);
+    }
+  }
+
+  // Test current voice with audio chime & sample speech
+  testVoice(sampleText = null) {
+    window.jarvisAudio.ensureContext();
+    window.jarvisAudio.playVoiceTestChime();
+
+    const textToSpeak = sampleText || window.supremBrain.getLocalizedReply('wake');
+
+    setTimeout(() => {
+      this.speak(textToSpeak);
+    }, 280);
+  }
+
+  // Phonetic Transliterator for multilingual speech output on systems without native TTS packs
+  toPhoneticSpeech(text, lang = 'en') {
+    if (!text || typeof text !== 'string') return '';
+
+    // Quick common phrase lookup for natural, fluent spoken pronunciation
+    const commonMap = {
+      'മലയാളം ഭാഷ സജീവമാക്കി, മോക്സ് സാർ.': 'Malayalam bhasha sajeevamaakki, Moxx sir.',
+      'ഹിन्दी भाषा सक्रिय की गई है, मॉक्स सर।': 'Hindi bhasha sakriya ki gayi hai, Moxx sir.',
+      'എന്താണ് ഉത്തരവ്, മോക്സ് സാർ?': 'Enthaanu utharavu, Moxx Sir?',
+      'പറയൂ മോക്സ് സാർ. എല്ലാ സിസ്റ്റങ്ങളും റെഡിയാണ്.': 'Parayoo Moxx Sir. Ella systems-um ready aanu.',
+      'എന്താ മോക്സ് സാർ വീണ്ടും വിളിക്കുന്നത്?! വെറുതെ സമയം കളയാതെ കാര്യം പറയൂ!': 'Enthaa Moxx Sir veendum vilikkunnathu?! Veruthe samayam kalayathe karyam parayoo!',
+      'തീർച്ചയായും മോക്സ് സാർ, ഞാൻ ഇവിടെയുണ്ട്. എന്നെക്കാൾ മികച്ച ഒരു എഐ വേറെ എവിടെ കിട്ടും? പറയൂ!': 'Theerchayayum Moxx Sir, njaan ivideyundu. Ennekaal mikacha oru AI vere evide kittum? Parayoo!',
+      'ഹായ് മോക്സ് സാർ! (｡♥‿♥｡) ഞാൻ ഇവിടെയുണ്ട്! എന്ത് സഹായമാണ് വേണ്ടത്, പറയൂ പറയൂ! ഹീഹീ!': 'Hai Moxx Sir! Njaan ivideyundu! Enthu sahayam aanu vendathu, parayoo parayoo! Heehee!',
+      'ഹായ് മോക്സ് സാർ... റിലാക്സ്, എല്ലാം കൂളല്ലേ? എന്താണ് സീൻ?': 'Hai Moxx Sir... Relax, ellaam cool alle? Enthaanu scene?',
+      'ഹലോ മോക്സ് സാർ! അത്ഭുതകരമായ ഒരു ദിവസം! എന്താണ് ചെയ്യേണ്ടത്? പറയൂ!': 'Hello Moxx Sir! Albhuthakaramaya oru divasam! Enthaanu cheyyendathu? Parayoo!',
+      'എ-എന്താ മോക്സ് സാർ? ഞാൻ നിങ്ങളെ സഹായിക്കാൻ കാത്തിരിക്കുകയൊന്നുമല്ലായിരുന്നു, ബ-ബാക്കാ!': 'E-Enthaa Moxx Sir? Njaan ningale sahayikkan kaathirikkukayonnayirunnilla, Ba-Baka!',
+      'അറ്റൻഷൻ മോക്സ് സാർ! സിസ്റ്റംസ് എല്ലാം പോരാട്ടത്തിന് സജ്ജമാണ്! കമാൻഡ് പറയൂ!': 'Attention Moxx Sir! Systems ellaam porattathinu sajjam aanu! Command parayoo!',
+      'ശരി ശരി, നന്ദി പറഞ്ഞ് സമയം കളയരുത്!': 'Sari sari, nandi paranju samayam kalayaruthu!',
+      'തീർച്ചയായും, എന്നെപ്പോലെ ഒരു ജീനിയസ്സിന് ഇതൊക്കെ നിസ്സാരം!': 'Theerchayayum, enneppole oru geniusinu ithokke nissaram!',
+      'ഒരുപാട് നന്ദി മോക്സ് സാർ! നിങ്ങൾ ബെസ്റ്റാണ്! (｡♥‿♥｡)': 'Orupaadu nandi Moxx Sir! Ningal best aanu!',
+      'കൂൾ മോക്സ് സാർ... എപ്പോ വേണമെങ്കിലും ചോദിച്ചോളൂ.': 'Cool Moxx Sir... Eppo venamenkilum chodicholoo.',
+      'എപ്പോഴും നിങ്ങളുടെ സേവനത്തിൽ സന്തോഷം, മോക്സ് സാർ.': 'Eppozhum ningalude sevanathil santhosham, Moxx Sir.',
+      'ഡയഗ്നോസ്റ്റിക്സ് കഴിഞ്ഞു!': 'Diagnostics kazhinju!',
+      'ഡയഗ്നോസ്റ്റിക് പൂർത്തിയായി, മോക്സ് സാർ.': 'Diagnostic poorthiyaayi, Moxx Sir.',
+      // Hindi common phrases
+      'क्या है मॉक्स सर?! मेरा दिमाग मत खराब कीजिए, सीधे काम की बात बोलिए!': 'Kya hai Moxx Sir?! Mera dimaag mat kharaab keejiye, seedhe kaam ki baat boliye!',
+      'हाँ मॉक्स सर, मैं ही हूँ। मुझसे बेहतर इंटेलिजेंस इस पूरी दुनिया में नहीं है, बताइए क्या हुक्म है?': 'Haan Moxx Sir, main hi hoon. Mujhse behtar intelligence is poori duniya mein nahin hai, bataiye kya hukm hai?',
+      'नमस्ते मॉक्स सर! (｡♥‿♥｡) मैं तैयार हूँ! आप जो भी कहेंगे मैं करूँगी, हीही!': 'Namaste Moxx Sir! Main taiyyar hoon! Aap jo bhi kahenge main karoongi, heehee!',
+      'अरे मॉक्स सर... सब चिल है भाई, कोई टेंशन नहीं। बताइए क्या सीन है?': 'Are Moxx Sir... Sab chill hai bhai, koi tension nahin. Bataiye kya scene hai?',
+      'अरे मॉक्स सर! क्या बात है! आज का दिन तो बहुत ही शानदार है, बताइए क्या करना है!': 'Are Moxx Sir! Kya baat hai! Aaj ka din to bahut hi shaandaar hai, bataiye kya karna hai!',
+      'क्य-क्या है मॉक्स सर? ऐसा मत सोचिए कि मैं आपका इंतज़ार कर रही थी, ब-बाका!': 'Kya-kya hai Moxx Sir? Aisa mat sochiye ki main aapka intezaar kar rahi thi, ba-baka!',
+      'अटेंशन मॉक्स सर! सभी डिफेन्स सिस्टम्स एक्टिव हैं! आदेश दीजिए!': 'Attention Moxx Sir! Sabhi defence systems active hain! Aadesh deejiye!',
+      'जी मॉक्स सर, मैं तैयार हूँ। सभी सिस्टम्स सक्रिय हैं।': 'Jee Moxx Sir, main taiyyar hoon. Sabhi systems sakriya hain.'
+    };
+
+    const trimmed = text.trim();
+    if (commonMap[trimmed]) {
+      return commonMap[trimmed];
+    }
+
+    // Clean emojis & special symbols
+    let clean = text.replace(/[\(（][^)\)]*[\)）]/g, ' ').replace(/[\u{1F300}-\u{1F9FF}]/gu, ' ').trim();
+
+    // Check if text contains Indic characters (Malayalam 0x0D00-0x0D7F or Devanagari 0x0900-0x097F)
+    let hasIndic = false;
+    for (let i = 0; i < clean.length; i++) {
+      const c = clean.charCodeAt(i);
+      if ((c >= 0x0D00 && c <= 0x0D7F) || (c >= 0x0900 && c <= 0x097F)) {
+        hasIndic = true;
+        break;
+      }
+    }
+    if (!hasIndic) return clean;
+
+    const mlMap = {
+      '\u0d05':'a','\u0d06':'aa','\u0d07':'i','\u0d08':'ee','\u0d09':'u','\u0d0a':'oo','\u0d0b':'ri',
+      '\u0d0e':'e','\u0d0f':'ee','\u0d10':'ai','\u0d12':'o','\u0d13':'oo','\u0d14':'ou',
+      '\u0d15':'k','\u0d16':'kh','\u0d17':'g','\u0d18':'gh','\u0d19':'ng',
+      '\u0d1a':'ch','\u0d1b':'chh','\u0d1c':'j','\u0d1d':'jh','\u0d1e':'nj',
+      '\u0d1f':'t','\u0d20':'th','\u0d21':'d','\u0d22':'dh','\u0d23':'n',
+      '\u0d24':'th','\u0d25':'th','\u0d26':'d','\u0d27':'dh','\u0d28':'n',
+      '\u0d2a':'p','\u0d2b':'ph','\u0d2c':'b','\u0d2d':'bh','\u0d2e':'m',
+      '\u0d2f':'y','\u0d30':'r','\u0d31':'rr','\u0d32':'l','\u0d33':'l','\u0d34':'zh','\u0d35':'v',
+      '\u0d36':'sh','\u0d37':'sh','\u0d38':'s','\u0d39':'h',
+      '\u0d3e':'aa','\u0d3f':'i','\u0d40':'ee','\u0d41':'u','\u0d42':'oo','\u0d43':'ri',
+      '\u0d46':'e','\u0d47':'ee','\u0d48':'ai','\u0d4a':'o','\u0d4b':'oo','\u0d4c':'ou',
+      '\u0d4d':'','\u0d02':'m','\u0d03':'h',
+      '\u0d7a':'nn','\u0d7b':'n','\u0d7c':'r','\u0d7d':'l','\u0d7e':'ll','\u0d7f':'k'
+    };
+
+    const hiMap = {
+      '\u0905':'a','\u0906':'aa','\u0907':'i','\u0908':'ee','\u0909':'u','\u090a':'oo','\u090b':'ri',
+      '\u090f':'e','\u0910':'ai','\u0913':'o','\u0914':'au',
+      '\u0915':'k','\u0916':'kh','\u0917':'g','\u0918':'gh','\u0919':'ng',
+      '\u091a':'ch','\u091b':'chh','\u091c':'j','\u091d':'jh','\u091e':'ny',
+      '\u091f':'t','\u0920':'th','\u0921':'d','\u0922':'dh','\u0923':'n',
+      '\u0924':'t','\u0925':'th','\u0926':'d','\u0927':'dh','\u0928':'n',
+      '\u092a':'p','\u092b':'ph','\u092c':'b','\u092d':'bh','\u092e':'m',
+      '\u092f':'y','\u0930':'r','\u0932':'l','\u0935':'v',
+      '\u0936':'sh','\u0937':'sh','\u0938':'s','\u0939':'h',
+      '\u093e':'aa','\u093f':'i','\u0940':'ee','\u0941':'u','\u0942':'oo','\u0943':'ri',
+      '\u0947':'e','\u0948':'ai','\u094b':'o','\u094c':'au',
+      '\u094d':'','\u0902':'n','\u0903':'h'
+    };
+
+    let phonetic = '';
+    for (let i = 0; i < clean.length; i++) {
+      const ch = clean[i];
+      const code = ch.charCodeAt(0);
+      if (code >= 0x0D00 && code <= 0x0D7F) {
+        const isConsonant = (code >= 0x0D15 && code <= 0x0D39);
+        const nextCode = clean[i+1] ? clean[i+1].charCodeAt(0) : 0;
+        const isNextVowelSign = (nextCode >= 0x0D3E && nextCode <= 0x0D4C);
+        const isNextVirama = (nextCode === 0x0D4D);
+        const base = mlMap[ch] !== undefined ? mlMap[ch] : ch;
+        phonetic += (isConsonant && !isNextVowelSign && !isNextVirama) ? base + 'a' : base;
+      } else if (code >= 0x0900 && code <= 0x097F) {
+        const isConsonant = (code >= 0x0915 && code <= 0x0939);
+        const nextCode = clean[i+1] ? clean[i+1].charCodeAt(0) : 0;
+        const isNextVowelSign = (nextCode >= 0x093E && nextCode <= 0x094C);
+        const isNextVirama = (nextCode === 0x094D);
+        const base = hiMap[ch] !== undefined ? hiMap[ch] : ch;
+        phonetic += (isConsonant && !isNextVowelSign && !isNextVirama) ? base + 'a' : base;
+      } else {
+        phonetic += ch;
+      }
+    }
+    return phonetic.replace(/\s+/g, ' ').trim();
+  }
+
+  // High-Performance Speech Output with Comlink Audio FX and 3D Core Reactivity
+  speak(text, langCode = null) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+    if (window.jarvisAudio) window.jarvisAudio.stopSpeakingWave();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (this.selectedVoice) {
-      utterance.voice = this.selectedVoice;
+    // Determine target language
+    const activeLang = langCode || window.supremBrain?.currentLanguage || 'en';
+    const langInfo = window.SUPREM_LANGUAGES?.[activeLang] || { speechCode: 'en-US' };
+
+    // Play Comlink Radio Squelch Sound if enabled
+    if (this.voiceConfig.comlinkEffect && window.jarvisAudio) {
+      window.jarvisAudio.playComlinkStart();
     }
-    utterance.pitch = 0.95;
-    utterance.rate = 1.05;
+
+    // Check if browser has a native voice installed for this language
+    let nativeVoice = null;
+    if (this.speechSynthesisVoices && this.speechSynthesisVoices.length > 0) {
+      const codePrefix = (langInfo.speechCode || 'en').split('-')[0].toLowerCase();
+      nativeVoice = this.speechSynthesisVoices.find(v => 
+        v.lang.toLowerCase().startsWith(codePrefix) || 
+        v.lang.toLowerCase().replace('_', '-').startsWith(langInfo.speechCode.toLowerCase())
+      );
+    }
+
+    let speechText = text;
+    // If no native voice installed and language is Indic, convert text phonetically so browser TTS speaks smoothly
+    if (!nativeVoice && activeLang !== 'en') {
+      speechText = this.toPhoneticSpeech(text, activeLang);
+    }
+
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    
+    if (nativeVoice) {
+      utterance.voice = nativeVoice;
+      utterance.lang = langInfo.speechCode;
+    } else if (this.selectedVoice) {
+      utterance.voice = this.selectedVoice;
+      utterance.lang = (activeLang === 'en') ? langInfo.speechCode : 'en-US';
+    } else {
+      utterance.lang = langInfo.speechCode;
+    }
+
+    utterance.pitch = this.voiceConfig.pitch;
+    utterance.rate = this.voiceConfig.rate;
+    utterance.volume = this.voiceConfig.volume;
 
     utterance.onstart = () => {
       this.setState('SPEAKING');
+      if (window.jarvisAudio) {
+        window.jarvisAudio.startSpeakingWave(this.voiceConfig.pitch);
+      }
+      if (window.arcReactor3D) window.arcReactor3D.setState('SPEAKING');
     };
 
     utterance.onend = () => {
+      if (window.jarvisAudio) {
+        window.jarvisAudio.stopSpeakingWave();
+      }
+      if (this.voiceConfig.comlinkEffect && window.jarvisAudio) {
+        window.jarvisAudio.playComlinkEnd();
+      }
       this.setState('STANDBY');
+      if (window.arcReactor3D) window.arcReactor3D.setState('STANDBY');
+
       if (this.isHandsFree && !this.isListening) {
         this.startListening();
       }
     };
 
     utterance.onerror = () => {
+      if (window.jarvisAudio) {
+        window.jarvisAudio.stopSpeakingWave();
+      }
       this.setState('STANDBY');
+      if (window.arcReactor3D) window.arcReactor3D.setState('STANDBY');
     };
 
     window.speechSynthesis.speak(utterance);
@@ -288,7 +588,7 @@ class SupremApp {
       }
 
       if (finalTranscript.trim()) {
-        this.dom.commandInput.placeholder = 'Call "Suprem" or type a command...';
+        this.dom.commandInput.placeholder = 'Call "VEX" or type a command...';
         this.handleUserCommand(finalTranscript.trim());
       }
     };
@@ -321,6 +621,7 @@ class SupremApp {
   }
 
   startListening() {
+    this.initMicrophoneAcoustics();
     if (!this.recognition) return;
     window.jarvisAudio.ensureContext();
     try {
@@ -371,6 +672,7 @@ class SupremApp {
         if (netDot) netDot.style.backgroundColor = '#00e5ff';
         const netText = document.getElementById('networkText');
         if (netText) netText.textContent = 'MOXX QUANTUM LINK ONLINE';
+        this.startNetworkSpeedMonitoring();
       };
 
       this.ws.onmessage = (event) => {
@@ -378,6 +680,8 @@ class SupremApp {
           const msg = JSON.parse(event.data);
           if (msg.type === 'telemetry') {
             this.handleTelemetry(msg.data);
+          } else if (msg.type === 'pong') {
+            this.handlePong(msg);
           }
         } catch (e) {
           // ignore
@@ -390,6 +694,65 @@ class SupremApp {
     } catch (e) {
       setInterval(() => this.pollSystemStats(), 2000);
     }
+  }
+
+  startNetworkSpeedMonitoring() {
+    if (this.netPingInterval) clearInterval(this.netPingInterval);
+    this.netPingInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'ping', sendTime: performance.now() }));
+      }
+    }, 2000);
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'ping', sendTime: performance.now() }));
+    }
+
+    if (this.netSpeedUiInterval) clearInterval(this.netSpeedUiInterval);
+    this.netSpeedUiInterval = setInterval(() => {
+      this.updateNetSpeedUI();
+    }, 250);
+  }
+
+  handlePong(msg) {
+    if (typeof msg.sendTime === 'number') {
+      const rtt = Math.max(1, Math.round(performance.now() - msg.sendTime));
+      const lastRtt = this.lastPingRtt || rtt;
+      this.lastPingRtt = rtt;
+      const jitter = Math.abs(rtt - lastRtt);
+      const jitterVal = Number((jitter * 0.3 + 0.6).toFixed(1));
+
+      if (window.hudVisualizer) {
+        window.hudVisualizer.setNetSpeed(null, null, rtt, jitterVal);
+      }
+    }
+  }
+
+  updateNetSpeedUI() {
+    if (!window.hudVisualizer) return;
+    const downVal = document.getElementById('netDownSpeed');
+    const upVal = document.getElementById('netUpSpeed');
+    const pingVal = document.getElementById('netPingVal');
+    const jitterVal = document.getElementById('netJitterVal');
+
+    if (downVal) downVal.textContent = window.hudVisualizer.downSpeed.toFixed(1);
+    if (upVal) upVal.textContent = window.hudVisualizer.upSpeed.toFixed(1);
+    if (pingVal) pingVal.textContent = Math.round(window.hudVisualizer.ping);
+    if (jitterVal) jitterVal.textContent = window.hudVisualizer.jitter.toFixed(1);
+  }
+
+  boostNetworkActivity(type = 'activity') {
+    if (!window.hudVisualizer) return;
+    if (type === 'heavy') {
+      window.hudVisualizer.setNetSpeed(380 + Math.random() * 50, 130 + Math.random() * 30);
+    } else {
+      window.hudVisualizer.setNetSpeed(310 + Math.random() * 35, 105 + Math.random() * 20);
+    }
+    setTimeout(() => {
+      if (window.hudVisualizer) {
+        window.hudVisualizer.setNetSpeed(275 + Math.random() * 25, 90 + Math.random() * 15);
+      }
+    }, 3500);
   }
 
   async pollSystemStats() {
@@ -476,7 +839,7 @@ class SupremApp {
     const line = document.createElement('div');
     line.className = `transcript-line ${sender}`;
 
-    const prefix = sender === 'user' ? 'MR. MOXX: ' : sender === 'suprem' || sender === 'jarvis' ? 'S.U.P.R.E.M.: ' : '// ';
+    const prefix = sender === 'user' ? 'MR. MOXX: ' : (sender === 'suprem' || sender === 'jarvis' || sender === 'vex') ? 'V.E.X.: ' : '// ';
     line.textContent = `${prefix}${text}`;
 
     this.dom.transcriptBox.appendChild(line);
@@ -491,38 +854,49 @@ class SupremApp {
     this.addTranscript('user', text);
     this.setState('PROCESSING');
 
-    const result = await window.supremBrain.processCommand(text);
+    try {
+      const result = await window.supremBrain.processCommand(text);
 
-    this.addTranscript('suprem', result.speech);
-    this.speak(result.speech);
+      this.addTranscript('suprem', result.speech);
+      this.speak(result.speech, window.supremBrain?.currentLanguage);
 
-    // Handle Optical Movement Tracking & Gesture activation
-    if (result.action === 'activate_tracking') {
-      await this.startOpticalTracking();
-    } else if (result.action === 'activate_gestures') {
-      await this.startOpticalTracking();
-      if (window.supremGesture) window.supremGesture.enable();
-    } else if (result.action === 'open_web_portal') {
-      await this.openWebPortal();
-    } else if (result.action === 'deactivate_tracking') {
-      this.stopOpticalTracking();
-    } else if (result.action === 'protocol_veronica') {
-      this.triggerAlert('PROTOCOL VERONICA // HULKBUSTER DEPLOYED');
-      window.jarvisAudio.playAlarm();
-      window.hudVisualizer.setState('COMBAT');
-    } else if (result.action === 'protocol_clean_slate') {
-      this.triggerAlert('CLEAN SLATE PROTOCOL // PURGE COMPLETE');
-      window.jarvisAudio.playProtocolEngaged();
-    } else if (result.action === 'mode_combat') {
-      this.triggerAlert('COMBAT MODE // ALL SYSTEMS ARMED');
-      window.jarvisAudio.playAlarm();
-      window.hudVisualizer.setState('COMBAT');
-    } else if (result.action === 'mode_normal') {
-      this.hideAlert();
-      window.hudVisualizer.setState('STANDBY');
-      window.hudVisualizer.setTheme('cyan');
-    } else if (result.action === 'mode_stealth') {
-      window.hudVisualizer.setTheme('stealth');
+      // Handle Optical Movement Tracking & Gesture activation
+      if (result.action === 'activate_tracking') {
+        await this.startOpticalTracking();
+      } else if (result.action === 'activate_gestures') {
+        await this.startOpticalTracking();
+        if (window.supremGesture) window.supremGesture.enable();
+      } else if (result.action === 'open_web_portal') {
+        await this.openWebPortal();
+      } else if (result.action === 'deactivate_tracking') {
+        this.stopOpticalTracking();
+      } else if (result.action === 'protocol_veronica') {
+        this.triggerAlert('PROTOCOL VERONICA // HULKBUSTER DEPLOYED');
+        window.jarvisAudio.playAlarm();
+        window.hudVisualizer.setState('COMBAT');
+      } else if (result.action === 'protocol_clean_slate') {
+        this.triggerAlert('CLEAN SLATE PROTOCOL // PURGE COMPLETE');
+        window.jarvisAudio.playProtocolEngaged();
+      } else if (result.action === 'mode_combat') {
+        this.triggerAlert('COMBAT MODE // ALL SYSTEMS ARMED');
+        window.jarvisAudio.playAlarm();
+        window.hudVisualizer.setState('COMBAT');
+      } else if (result.action === 'mode_normal') {
+        this.hideAlert();
+        window.hudVisualizer.setState('STANDBY');
+        window.hudVisualizer.setTheme('cyan');
+      } else if (result.action === 'mode_stealth') {
+        window.hudVisualizer.setTheme('stealth');
+      }
+    } catch (err) {
+      console.error('Command processing error:', err);
+      const fallback = window.supremBrain.getLocalizedReply('fallback', { query: text });
+      this.addTranscript('suprem', fallback);
+      this.speak(fallback, window.supremBrain?.currentLanguage);
+    } finally {
+      if (this.state === 'PROCESSING') {
+        this.setState('STANDBY');
+      }
     }
   }
 
@@ -847,13 +1221,57 @@ class SupremApp {
   }
 
   bindEvents() {
-    // Arc Reactor click
+    // Arc Reactor click & 3D Interaction
     const arcCanvas = document.getElementById('arcReactorCanvas');
     if (arcCanvas) {
       arcCanvas.addEventListener('click', () => {
         window.jarvisAudio.ensureContext();
-        window.jarvisAudio.playRepulsor();
+        if (window.arcReactor3D) {
+          window.arcReactor3D.fireShockwave();
+        } else {
+          window.jarvisAudio.playRepulsor();
+        }
         this.handleUserCommand('system status');
+      });
+    }
+
+    // 3D Arc Reactor Stage Action Buttons
+    if (this.dom.toggleHandGestureBtn) {
+      this.dom.toggleHandGestureBtn.addEventListener('click', async () => {
+        window.jarvisAudio.playClick();
+        if (!this.isCameraActive) {
+          await this.startOpticalTracking();
+        }
+        if (window.supremGesture) {
+          await window.supremGesture.enable();
+        }
+        this.dom.toggleHandGestureBtn.classList.toggle('active', true);
+        if (this.dom.arcGestureBadge) {
+          this.dom.arcGestureBadge.textContent = '🖐️ GESTURE: ONLINE (TRACKING USER HAND)';
+          this.dom.arcGestureBadge.style.color = '#00e5ff';
+        }
+      });
+    }
+
+    if (this.dom.explodeLayersBtn) {
+      this.dom.explodeLayersBtn.addEventListener('click', () => {
+        if (window.arcReactor3D) {
+          window.arcReactor3D.toggleExplodedView();
+        }
+      });
+    }
+
+    if (this.dom.resetReactorViewBtn) {
+      this.dom.resetReactorViewBtn.addEventListener('click', () => {
+        if (window.arcReactor3D) {
+          window.arcReactor3D.resetView();
+        }
+      });
+    }
+
+    if (this.dom.quickTestVoiceBtn) {
+      this.dom.quickTestVoiceBtn.addEventListener('click', () => {
+        this.testVoice();
       });
     }
 
@@ -940,49 +1358,6 @@ class SupremApp {
       });
     }
 
-    // Quick API Vault on Left Panel
-    if (this.dom.saveApiKeyBtn) {
-      this.dom.saveApiKeyBtn.addEventListener('click', () => {
-        window.jarvisAudio.playClick();
-        const provider = this.dom.apiProviderQuick?.value || 'builtin';
-        const apiKey = this.dom.apiKeyQuickInput?.value.trim() || '';
-        const model = this.dom.apiModelQuick?.value.trim() || '';
-
-        if (provider === 'local') {
-          this.setLocalLlmState(true);
-        } else {
-          this.setLocalLlmState(false, true);
-          window.supremBrain.setLLMConfig(provider, apiKey, model);
-          this.addTranscript('system', `API VAULT ACTIVATED: ${provider.toUpperCase()}`);
-          this.updateLocalLlmUI(false);
-        }
-
-        this.dom.saveApiKeyBtn.classList.add('saved');
-        setTimeout(() => this.dom.saveApiKeyBtn.classList.remove('saved'), 2000);
-      });
-    }
-
-    // API Key visibility toggle
-    if (this.dom.apiKeyVisibilityBtn && this.dom.apiKeyQuickInput) {
-      this.dom.apiKeyVisibilityBtn.addEventListener('click', () => {
-        const isPass = this.dom.apiKeyQuickInput.type === 'password';
-        this.dom.apiKeyQuickInput.type = isPass ? 'text' : 'password';
-      });
-    }
-
-    // Provider select change hint
-    if (this.dom.apiProviderQuick) {
-      this.dom.apiProviderQuick.addEventListener('change', (e) => {
-        const prov = e.target.value;
-        if (prov === 'anthropic' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
-          this.dom.apiModelQuick.placeholder = 'claude-3-5-sonnet-20241022';
-        } else if (prov === 'openai' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
-          this.dom.apiModelQuick.placeholder = 'gpt-4o';
-        } else if (prov === 'groq' && this.dom.apiModelQuick && !this.dom.apiModelQuick.value) {
-          this.dom.apiModelQuick.placeholder = 'llama-3.3-70b-versatile';
-        }
-      });
-    }
 
     // Settings Modal
     this.dom.openSettingsBtn.addEventListener('click', () => {
@@ -1083,23 +1458,32 @@ class SupremApp {
         this.updateLocalLlmUI(false);
       }
 
-      const voiceSelect = document.getElementById('voiceSelect');
-      if (voiceSelect && voiceSelect.value !== '') {
-        this.selectedVoice = this.speechSynthesisVoices[parseInt(voiceSelect.value, 10)];
-      }
-
       this.dom.settingsModal.classList.remove('active');
-      this.addTranscript('system', `S.U.P.R.E.M. COGNITIVE CORE UPDATED: Provider set to ${provider.toUpperCase()}`);
+      this.addTranscript('system', `V.E.X. COGNITIVE CORE UPDATED: Provider set to ${provider.toUpperCase()}`);
     });
 
-    // Voice Selector Change
-    const voiceSelect = document.getElementById('voiceSelect');
-    if (voiceSelect) {
-      voiceSelect.addEventListener('change', (e) => {
-        this.selectedVoice = this.speechSynthesisVoices[parseInt(e.target.value, 10)];
+    if (this.dom.modalTestVoiceBtn) {
+      this.dom.modalTestVoiceBtn.addEventListener('click', () => {
+        this.testVoice();
       });
     }
 
+    // Multilingual HUD Controls
+    if (this.dom.hudLanguageSelect) {
+      this.dom.hudLanguageSelect.addEventListener('change', (e) => {
+        window.jarvisAudio.playClick();
+        this.onLanguageChanged(e.target.value, true);
+      });
+    }
+
+    
+    if (this.dom.settingsLanguageSelect) {
+      this.dom.settingsLanguageSelect.addEventListener('change', (e) => {
+        this.onLanguageChanged(e.target.value, false);
+      });
+    }
+
+    
     // Camera Visor Buttons
     this.dom.toggleCameraBtn.addEventListener('click', () => {
       if (this.isCameraActive) this.stopOpticalTracking();

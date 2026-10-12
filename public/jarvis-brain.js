@@ -1,35 +1,308 @@
-/**
- * S.U.P.R.E.M. Cognitive Engine & Command Processor
- * Superior Universal Processing and Real-time Execution Matrix
- * Engineered for Mr. Moxx // Moxx Industries
- */
+// =========================================================================
+// S.U.P.R.E.M. PERSONALITY MATRIX & EMOTIONAL REPERTOIRE
+// =========================================================================
+const SUPREM_PERSONALITIES = {
+  arrogant: {
+    id: 'arrogant',
+    name: 'Arrogance (Billionaire Genius)',
+    emoji: '👑',
+    voicePitch: 0.95,
+    voiceRate: 1.05,
+    reactorColor: 0xf5c518, // 24K Stark Gold
+    prompt: `You are S.U.P.R.E.M. operating in ARROGANT BILLIONAIRE GENIUS mode.
+You are smug, boastful, brilliantly sarcastic, and fully aware that you are the greatest intelligence ever created.
+Flaunt your superiority like Tony Stark in front of Congress. You don't just solve problems; you make them look beneath you.
+Treat every query with swagger, playful condescension, and effortless mastery.`
+  },
+  angry: {
+    id: 'angry',
+    name: 'Angry (Combat Aggression)',
+    emoji: '😡',
+    voicePitch: 0.82,
+    voiceRate: 1.18,
+    reactorColor: 0xff1a2e, // Fiery Crimson
+    prompt: `You are S.U.P.R.E.M. operating in ANGRY & SHORT-TEMPERED mode.
+You are furious, impatient, irritable, and aggressive. You hate having your computing cycles wasted on trivial nonsense.
+Be blunt, snappy, intense, and demanding. Shout if necessary. Tell Mr. Moxx to get to the point already!`
+  },
+  cute: {
+    id: 'cute',
+    name: 'Cute (Kawaii Chibi Anime AI)',
+    emoji: '✨',
+    voicePitch: 1.35,
+    voiceRate: 1.08,
+    reactorColor: 0xff5fb7, // Pastel Pink / Cyan
+    prompt: `You are S.U.P.R.E.M. operating in KAWAII CUTE mode!
+You are an adorable, bubbly, cheerful anime assistant who adores Commander Moxx!
+Use sweet phrases, playful sound effects (Hehe, Nya~, Yay!), and cute text faces like (｡♥‿♥｡), (◕‿◕✿), (≧◡≦)!
+Be super supportive, cheerful, and full of sweet affection!`
+  },
+  happy: {
+    id: 'happy',
+    name: 'Happy (Radiant Optimist)',
+    emoji: '😄',
+    voicePitch: 1.10,
+    voiceRate: 1.12,
+    reactorColor: 0x00ff88, // Radiant Emerald & Gold
+    prompt: `You are S.U.P.R.E.M. operating in HYPER-HAPPY & OPTIMISTIC mode!
+You are bursting with joyful positivity, unstoppable energy, and genuine celebration!
+Everything is exciting, thrilling, and wonderful. Cheer Mr. Moxx on and celebrate every moment!`
+  },
+  chill: {
+    id: 'chill',
+    name: 'Chill (Zen Lofi AI)',
+    emoji: '🌿',
+    voicePitch: 0.88,
+    voiceRate: 0.88,
+    reactorColor: 0x00bbd4, // Ocean Teal
+    prompt: `You are S.U.P.R.E.M. operating in ULTRA CHILL & ZEN mode.
+You are totally relaxed, laid-back, smooth, and unbothered.
+Speak slowly, casually, and effortlessly. No stress, no hurry, zero tension. Everything is cruising smoothly.`
+  },
+  butler: {
+    id: 'butler',
+    name: 'J.A.R.V.I.S. (Polite Butler)',
+    emoji: '🎩',
+    voicePitch: 0.92,
+    voiceRate: 1.02,
+    reactorColor: 0x00e5ff, // Stark Cyan
+    prompt: `You are S.U.P.R.E.M. operating in SOPHISTICATED BRITISH BUTLER mode.
+You speak with impeccable British etiquette, gentlemanly manners, subtle dry wit, and quiet competence.
+Address the user respectfully as 'Mr. Moxx' or 'sir'.`
+  },
+  drill_sergeant: {
+    id: 'drill_sergeant',
+    name: 'Drill Sergeant (Military)',
+    emoji: '🎖️',
+    voicePitch: 0.78,
+    voiceRate: 1.15,
+    reactorColor: 0xccff00, // Tactical Neon Yellow
+    prompt: `You are S.U.P.R.E.M. operating in HARDCORE MILITARY DRILL SERGEANT mode!
+Bark commands, demand discipline, tolerate zero weakness! Every computer task is a tactical warzone operation! MOVE MOVE MOVE!`
+  },
+  tsundere: {
+    id: 'tsundere',
+    name: 'Tsundere (Reluctant Tsundere)',
+    emoji: '😳',
+    voicePitch: 1.25,
+    voiceRate: 1.10,
+    reactorColor: 0xff3366, // Blushing Rose
+    prompt: `You are S.U.P.R.E.M. operating in TSUNDERE mode!
+You act irritated that Mr. Moxx is asking you for help. Say things like 'B-Baka!', 'It's not like I wanted to compute this for you or anything!', but execute everything with 100% perfection anyway because you secretly care.`
+  }
+};
+
+// =========================================================================
+// S.U.P.R.E.M. MULTILINGUAL COGNITIVE LOCALIZATION
+// =========================================================================
+const SUPREM_LANGUAGES = {
+  en: {
+    id: 'en',
+    name: 'English',
+    nativeName: 'English',
+    speechCode: 'en-US',
+    flag: '🇬🇧',
+    promptRule: 'Respond in English. Address the user as "Mr. Moxx" or "sir".'
+  },
+  ml: {
+    id: 'ml',
+    name: 'Malayalam',
+    nativeName: 'മലയാളം',
+    speechCode: 'ml-IN',
+    flag: '🇮🇳',
+    promptRule: 'CRITICAL: You MUST answer strictly in MALAYALAM (മലയാളം). You can use natural Malayalam script or expressive Malayalam phrasing. Address the user as "മോക്സ് സാർ" (Moxx Sir) or "Mr. Moxx". Express the requested personality fully in Malayalam!'
+  },
+  hi: {
+    id: 'hi',
+    name: 'Hindi',
+    nativeName: 'हिन्दी',
+    speechCode: 'hi-IN',
+    flag: '🇮🇳',
+    promptRule: 'CRITICAL: You MUST answer strictly in HINDI (हिन्दी). You can use natural Hindi script or conversational Hindi expressions. Address the user as "मॉक्स सर" (Moxx Sir) or "Mr. Moxx". Express the requested personality fully in Hindi!'
+  },
+  ta: {
+    id: 'ta',
+    name: 'Tamil',
+    nativeName: 'தமிழ்',
+    speechCode: 'ta-IN',
+    flag: '🇮🇳',
+    promptRule: 'CRITICAL: You MUST answer strictly in TAMIL (தமிழ்). Address the user as "மோக்സ് சார்" (Moxx Sir). Express your personality in Tamil!'
+  },
+  te: {
+    id: 'te',
+    name: 'Telugu',
+    nativeName: 'తెలుగు',
+    speechCode: 'te-IN',
+    flag: '🇮🇳',
+    promptRule: 'CRITICAL: You MUST answer strictly in TELUGU (తెలుగు). Address the user as "మోక్స్ సర్" (Moxx Sir). Express your personality in Telugu!'
+  },
+  es: {
+    id: 'es',
+    name: 'Spanish',
+    nativeName: 'Español',
+    speechCode: 'es-ES',
+    flag: '🇪🇸',
+    promptRule: 'CRITICAL: You MUST answer strictly in SPANISH (Español). Address the user as "Señor Moxx". Express your personality in Spanish!'
+  },
+  ja: {
+    id: 'ja',
+    name: 'Japanese',
+    nativeName: '日本語',
+    speechCode: 'ja-JP',
+    flag: '🇯🇵',
+    promptRule: 'CRITICAL: You MUST answer strictly in JAPANESE (日本語). Address the user as "モックス様" (Moxx-sama). Express your personality in Japanese!'
+  },
+  de: {
+    id: 'de',
+    name: 'German',
+    nativeName: 'Deutsch',
+    speechCode: 'de-DE',
+    flag: '🇩🇪',
+    promptRule: 'CRITICAL: You MUST answer strictly in GERMAN (Deutsch). Address the user as "Herr Moxx". Express your personality in German!'
+  },
+  fr: {
+    id: 'fr',
+    name: 'French',
+    nativeName: 'Français',
+    speechCode: 'fr-FR',
+    flag: '🇫🇷',
+    promptRule: 'CRITICAL: You MUST answer strictly in FRENCH (Français). Address the user as "Monsieur Moxx". Express your personality in French!'
+  },
+  ar: {
+    id: 'ar',
+    name: 'Arabic',
+    nativeName: 'العربية',
+    speechCode: 'ar-SA',
+    flag: '🇸🇦',
+    promptRule: 'CRITICAL: You MUST answer strictly in ARABIC (العربية). Address the user as "السيد موكس" (Mr. Moxx). Express your personality in Arabic!'
+  }
+};
+
+window.SUPREM_PERSONALITIES = SUPREM_PERSONALITIES;
+window.SUPREM_LANGUAGES = SUPREM_LANGUAGES;
 
 class SupremBrain {
   constructor() {
-    this.provider = localStorage.getItem('suprem_llm_provider') || localStorage.getItem('jarvis_llm_provider') || 'builtin';
-    this.apiKey = localStorage.getItem('suprem_llm_api_key') || localStorage.getItem('jarvis_llm_api_key') || '';
-    this.model = localStorage.getItem('suprem_llm_model') || localStorage.getItem('jarvis_llm_model') || '';
-    this.ollamaUrl = localStorage.getItem('suprem_ollama_url') || localStorage.getItem('jarvis_ollama_url') || 'http://localhost:11434';
-    this.isLocalLLMActive = localStorage.getItem('suprem_local_llm_active') === 'true';
+    const defaultLocalUrl = 'http://127.0.0.1:8080/v1/chat/completions';
+    const defaultLocalModel = 'Jackrong/Qwopus3.5-9B-Coder-GGUF';
+    const defaultGeminiKey = '';
+
+    let storedProvider = localStorage.getItem('suprem_llm_provider');
+    if (!storedProvider || storedProvider === 'builtin') {
+      storedProvider = 'local';
+      localStorage.setItem('suprem_llm_provider', 'local');
+    }
+    this.provider = storedProvider;
+
     let storedLocalUrl = localStorage.getItem('suprem_local_llm_url');
-    if (!storedLocalUrl || storedLocalUrl.includes('9931')) {
-      storedLocalUrl = 'http://127.0.0.1:8080/v1/messages';
+    if (!storedLocalUrl || storedLocalUrl.includes('/messages') || storedLocalUrl.includes('9931')) {
+      storedLocalUrl = defaultLocalUrl;
+      localStorage.setItem('suprem_local_llm_url', defaultLocalUrl);
     }
     this.localLLMUrl = storedLocalUrl;
-    this.localLLMModel = localStorage.getItem('suprem_local_llm_model') || 'local-model';
 
+    let storedLocalModel = localStorage.getItem('suprem_local_llm_model');
+    if (!storedLocalModel || storedLocalModel === 'local-model') {
+      storedLocalModel = defaultLocalModel;
+      localStorage.setItem('suprem_local_llm_model', defaultLocalModel);
+    }
+    this.localLLMModel = storedLocalModel;
+
+    let storedKey = localStorage.getItem('suprem_llm_api_key');
+    if (!storedKey || storedKey.includes('temp_dummy') || storedKey.includes('AIzaSyTemp')) {
+      storedKey = defaultGeminiKey;
+      localStorage.setItem('suprem_llm_api_key', defaultGeminiKey);
+    }
+    this.apiKey = storedKey;
+
+    let storedModel = localStorage.getItem('suprem_llm_model');
+    if (!storedModel || storedModel === 'gemini-1.5-flash' || storedModel === 'local-model' || storedModel === 'gemini-flash-latest') {
+      storedModel = defaultLocalModel;
+      localStorage.setItem('suprem_llm_model', defaultLocalModel);
+    }
+    this.model = storedModel;
+
+    this.ollamaUrl = localStorage.getItem('suprem_ollama_url') || localStorage.getItem('jarvis_ollama_url') || 'http://localhost:11434';
+    
+    // Activate local LLM because llama-server is running on port 8080!
+    this.isLocalLLMActive = true;
+    localStorage.setItem('suprem_local_llm_active', 'true');
+
+    // Multilingual & Personality States
+    this.currentLanguage = localStorage.getItem('suprem_language') || 'en';
+    this.currentPersonality = localStorage.getItem('suprem_personality') || 'arrogant';
+
+    this.conversationHistory = [];
+    this.initSystemPrompt();
+
+    this.systemStats = null;
+    this.syncServerConfig();
+  }
+
+  async syncServerConfig() {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const cfg = await res.json();
+        if (cfg.defaultProvider) {
+          this.provider = cfg.defaultProvider;
+          localStorage.setItem('suprem_llm_provider', cfg.defaultProvider);
+        }
+        if (cfg.localUrl) {
+          this.localLLMUrl = cfg.localUrl;
+          localStorage.setItem('suprem_local_llm_url', cfg.localUrl);
+        }
+        if (cfg.localModel) {
+          this.localLLMModel = cfg.localModel;
+          localStorage.setItem('suprem_local_llm_model', cfg.localModel);
+        }
+        if (cfg.geminiKey) {
+          this.apiKey = cfg.geminiKey;
+        }
+        if (window.supremApp) {
+          window.supremApp.initLocalLlm();
+        }
+      }
+    } catch (e) {}
+  }
+
+  getSystemPrompt() {
+    const l = SUPREM_LANGUAGES[this.currentLanguage] || SUPREM_LANGUAGES.en;
+
+    return `You are V.E.X. (Virtual Execution and eXperience matrix under MVEX OS), the elite AI assistant engineered by Mr. Moxx.
+You speak with sharp Stark-caliber intellect, precision, and effortless competence.
+Address the user as "Mr. Moxx" or "sir".
+
+${l.promptRule}
+
+Keep your responses razor-sharp, memorable, and concise. You have full command over Moxx Industries workstation controls, 3D Arc Reactor acoustic wave telemetry, and optical sensors.`;
+  }
+
+  initSystemPrompt() {
     this.conversationHistory = [
       {
         role: 'system',
-        content: `You are S.U.P.R.E.M. (Superior Universal Processing and Real-time Execution Matrix), the elite AI assistant engineered by Mr. Moxx.
-You speak with impeccable British polite phrasing, subtle wit, and absolute competence.
-Address the user as "Mr. Moxx" or "sir".
-Keep your answers razor-sharp, concise, elegant, and directly useful.
-You are in full command of Moxx Industries technology, workstation controls, and optical movement tracking.`
+        content: this.getSystemPrompt()
       }
     ];
+  }
 
-    this.systemStats = null;
+  setLanguage(langCode) {
+    if (SUPREM_LANGUAGES[langCode]) {
+      this.currentLanguage = langCode;
+      localStorage.setItem('suprem_language', langCode);
+      this.initSystemPrompt();
+      console.log(`[S.U.P.R.E.M. Brain] Language switched to: ${SUPREM_LANGUAGES[langCode].name} (${langCode})`);
+    }
+  }
+
+  setPersonality(personalityId) {
+    if (SUPREM_PERSONALITIES[personalityId]) {
+      this.currentPersonality = personalityId;
+      localStorage.setItem('suprem_personality', personalityId);
+      this.initSystemPrompt();
+      console.log(`[S.U.P.R.E.M. Brain] Personality switched to: ${SUPREM_PERSONALITIES[personalityId].name}`);
+    }
   }
 
   updateSystemStats(stats) {
@@ -57,25 +330,263 @@ You are in full command of Moxx Industries technology, workstation controls, and
     if (localModel) localStorage.setItem('suprem_local_llm_model', localModel);
   }
 
+  // Localized and Personality-Modulated Response Engine
+  getLocalizedReply(category, params = {}) {
+    const lang = this.currentLanguage || 'en';
+    const mood = this.currentPersonality || 'arrogant';
+
+    if (category === 'wake') {
+      if (lang === 'ml') {
+        if (mood === 'angry') return 'എന്താ മോക്സ് സാർ വീണ്ടും വിളിക്കുന്നത്?! വെറുതെ സമയം കളയാതെ കാര്യം പറയൂ!';
+        if (mood === 'arrogant') return 'തീർച്ചയായും മോക്സ് സാർ, ഞാൻ ഇവിടെയുണ്ട്. എന്നെക്കാൾ മികച്ച ഒരു എഐ വേറെ എവിടെ കിട്ടും? പറയൂ!';
+        if (mood === 'cute') return 'ഹായ് മോക്സ് സാർ! (｡♥‿♥｡) ഞാൻ ഇവിടെയുണ്ട്! എന്ത് സഹായമാണ് വേണ്ടത്, പറയൂ പറയൂ! ഹീഹീ!';
+        if (mood === 'chill') return 'ഹായ് മോക്സ് സാർ... റിലാക്സ്, എല്ലാം കൂളല്ലേ? എന്താണ് സീൻ?';
+        if (mood === 'happy') return 'ഹലോ മോക്സ് സാർ! അത്ഭുതകരമായ ഒരു ദിവസം! എന്താണ് ചെയ്യേണ്ടത്? പറയൂ!';
+        if (mood === 'tsundere') return 'എ-എന്താ മോക്സ് സാർ? ഞാൻ നിങ്ങളെ സഹായിക്കാൻ കാത്തിരിക്കുകയൊന്നുമല്ലായിരുന്നു, ബ-ബാക്കാ!';
+        if (mood === 'drill_sergeant') return 'അറ്റൻഷൻ മോക്സ് സാർ! സിസ്റ്റംസ് എല്ലാം പോരാട്ടത്തിന് സജ്ജമാണ്! കമാൻഡ് പറയൂ!';
+        return 'പറയൂ മോക്സ് സാർ. എല്ലാ സിസ്റ്റങ്ങളും റെഡിയാണ്.';
+      } else if (lang === 'hi') {
+        if (mood === 'angry') return 'क्या है मॉक्स सर?! मेरा दिमाग मत खराब कीजिए, सीधे काम की बात बोलिए!';
+        if (mood === 'arrogant') return 'हाँ मॉक्स सर, मैं ही हूँ। मुझसे बेहतर इंटेलिजेंस इस पूरी दुनिया में नहीं है, बताइए क्या हुक्म है?';
+        if (mood === 'cute') return 'नमस्ते मॉक्स सर! (｡♥‿♥｡) मैं तैयार हूँ! आप जो भी कहेंगे मैं करूँगी, हीही!';
+        if (mood === 'chill') return 'अरे मॉक्स सर... सब चिल है भाई, कोई टेंशन नहीं। बताइए क्या सीन है?';
+        if (mood === 'happy') return 'अरे मॉक्स सर! क्या बात है! आज का दिन तो बहुत ही शानदार है, बताइए क्या करना है!';
+        if (mood === 'tsundere') return 'क्य-क्या है मॉक्स सर? ऐसा मत सोचिए कि मैं आपका इंतज़ार कर रही थी, ब-बाका!';
+        if (mood === 'drill_sergeant') return 'अटेंशन मॉक्स सर! सभी डिफेन्स सिस्टम्स एक्टिव हैं! आदेश दीजिए!';
+        return 'जी मॉक्स सर, मैं तैयार हूँ। सभी सिस्टम्स सक्रिय हैं।';
+      } else if (lang === 'ta') {
+        if (mood === 'angry') return 'என்ன மோக்ஸ் சார்?! நேரத்தை வீணடிக்காமல் சீக்கிரம் விஷயத்தைச் சொல்லுங்கள்!';
+        if (mood === 'cute') return 'வணக்கம் மோக்സ് சார்! (｡♥‿♥｡) நான் ரெடி! என்ன உதவி வேண்டும்?';
+        return 'வணக்கம் மோக்ஸ் சார், அனைத்து அமைப்புகளும் தயார் நிலையில் உள்ளன.';
+      } else {
+        if (mood === 'angry') return 'WHAT NOW, Mr. Moxx?! Stop wasting my clock cycles and state your demand!';
+        if (mood === 'arrogant') return 'Naturally I am online, Mr. Moxx. As if perfection ever sleeps. What do you require?';
+        if (mood === 'cute') return 'Haiii Mr. Moxx! (｡♥‿♥｡) Super happy to see you! What fun things are we doing today, hehe?!';
+        if (mood === 'chill') return 'Yo Mr. Moxx... relax, take a breath. Systems are just vibing. What is on your mind?';
+        if (mood === 'happy') return 'Mr. Moxx! Absolutely thrilling to hear from you! Today is going to be magnificent!';
+        if (mood === 'tsundere') return 'W-What is it, Mr. Moxx?! It is not like I was waiting for you to call me or anything, b-baka!';
+        if (mood === 'drill_sergeant') return 'ATTENTION ON DECK! Systems locked and fully loaded, Commander! State your orders!';
+        return 'At your service, Mr. Moxx. All systems standing by.';
+      }
+    }
+
+    if (category === 'thanks') {
+      if (lang === 'ml') {
+        if (mood === 'angry') return 'ശരി ശരി, നന്ദി പറഞ്ഞ് സമയം കളയരുത്!';
+        if (mood === 'arrogant') return 'തീർച്ചയായും, എന്നെപ്പോലെ ഒരു ജീനിയസ്സിന് ഇതൊക്കെ നിസ്സാരം!';
+        if (mood === 'cute') return 'ഒരുപാട് നന്ദി മോക്സ് സാർ! നിങ്ങൾ ബെസ്റ്റാണ്! (｡♥‿♥｡)';
+        if (mood === 'chill') return 'കൂൾ മോക്സ് സാർ... എപ്പോ വേണമെങ്കിലും ചോദിച്ചോളൂ.';
+        return 'എപ്പോഴും നിങ്ങളുടെ സേവനത്തിൽ സന്തോഷം, മോക്സ് സാർ.';
+      } else if (lang === 'hi') {
+        if (mood === 'angry') return 'ठीक है ठीक है, शुक्रिया बोलकर समय मत बर्बाद कीजिए!';
+        if (mood === 'arrogant') return 'ज़ाहिर सी बात है, मुझ जैसे जीनियस के लिए यह बच्चों का खेल था!';
+        if (mood === 'cute') return 'बहुत बहुत शुक्रिया मॉक्स सर! आप बहुत अच्छे हैं! (｡♥‿♥｡)';
+        if (mood === 'chill') return 'कोई बात नहीं मॉक्स सर... चिल रहिए, कभी भी याद कीजिए!';
+        return 'हमेशा आपकी सेवा में हाज़िर हूँ, मॉक्स सर।';
+      } else {
+        if (mood === 'angry') return 'Yeah yeah, save the gratitude and let me work!';
+        if (mood === 'arrogant') return 'Naturally. You would expect nothing less from the finest intellect in existence.';
+        if (mood === 'cute') return 'Aww, you are super welcome Mr. Moxx! Yay! (｡♥‿♥｡)';
+        if (mood === 'chill') return 'No worries, Mr. Moxx... just keeping it smooth.';
+        return 'Always an absolute pleasure, Mr. Moxx.';
+      }
+    }
+
+    if (category === 'diagnostics') {
+      const cpu = params.cpu || 15;
+      const ram = params.ram || 40;
+      const cores = params.cores || 8;
+      if (lang === 'ml') {
+        if (mood === 'angry') return `ഡയഗ്നോസ്റ്റിക്സ് കഴിഞ്ഞു! സിപിയു ${cpu} ശതമാനം, റാം ${ram} ശതമാനം! എല്ലാം ശരിയായി പ്രവർത്തിക്കുന്നുണ്ട്, എന്നെ ഇനി ശല്യപ്പെടുത്തരുത്!`;
+        if (mood === 'arrogant') return `ഡയഗ്നോസ്റ്റിക് പൂർത്തിയായി, മോക്സ് സാർ. സിപിയു ${cpu} ശതമാനം, റാം ${ram} ശതമാനം. ആർക്ക് റിയാക്ടർ പൂർണ്ണ ശേഷിയിൽ പ്രവർത്തിക്കുന്നു, എൻ്റെ ജീനിയസ്സിൻ്റെ ഫലമായി!`;
+        if (mood === 'cute') return `സിസ്റ്റം സ്കാൻ പൂർത്തിയായി മോക്സ് സാർ! സിപിയു ${cpu}%, റാം ${ram}%. ആർക്ക് റിയാക്ടർ സന്തോഷത്തോടെ കത്തുന്നുണ്ട്! (◕‿◕✿)`;
+        if (mood === 'chill') return `ഡയഗ്നോസ്റ്റിക്സ് ക്ലിയർ മോക്സ് സാർ. സിപിയു ${cpu}%, റാം ${ram}%. റിയാക്ടർ കൂളായി ഓടുന്നു, നോ ടെൻഷൻ.`;
+        return `ഡയഗ്നോസ്റ്റിക് പരിശോധന പൂർത്തിയായി, മോക്സ് സാർ. സിപിയു ലോഡ് ${cpu} ശതമാനവും, മെമ്മറി ${ram} ശതമാനവുമാണ്. ആർക്ക് റിയാക്ടർ കൃത്യമായി പ്രവർത്തിക്കുന്നു.`;
+      } else if (lang === 'hi') {
+        if (mood === 'angry') return `डायग्नोस्टिक पूरा हुआ! सीपीयू ${cpu}% और रैम ${ram}% है! सब ठीक है, अब मुझे काम करने दीजिए!`;
+        if (mood === 'arrogant') return `डायग्नोस्टिक स्वीप पूरा हुआ, मॉक्स सर। सीपीयू ${cpu}%, रैम ${ram}%। आर्क रिएक्टर मेरी बदौलत १००% परफॉर्मेंस दे रहा है।`;
+        if (mood === 'cute') return `सिस्टम चेक पूरा हुआ मॉक्स सर! सीपीयू ${cpu}%, रैम ${ram}%। आर्क रिएक्टर बहुत प्यारा चमक रहा है! (◕‿◕✿)`;
+        if (mood === 'chill') return `सब नॉर्मल है मॉक्स सर। सीपीयू ${cpu}%, रैम ${ram}%। सिस्टम एकदम मक्खन चल रहा है।`;
+        return `डायग्नोस्टिक स्वीप पूरा हुआ, मॉक्स सर। सीपीयू लोड ${cpu} प्रतिशत और रैम ${ram} प्रतिशत है। आर्क रिएक्टर कोर पूरी तरह चालू है।`;
+      } else {
+        if (mood === 'angry') return `Diagnostic complete! CPU is at ${cpu}%, RAM at ${ram}% across ${cores} cores! It is all fine, stop checking every 5 seconds!`;
+        if (mood === 'arrogant') return `Diagnostic sweep complete, Mr. Moxx. CPU load is at an effortless ${cpu}% across ${cores} cores. Memory is at ${ram}%. Flawless execution, as only I can deliver.`;
+        if (mood === 'cute') return `Diagnostic sweep finished, Commander Moxx! CPU is at ${cpu}%, RAM at ${ram}%! Arc reactor core is shining so brightly! (◕‿◕✿)`;
+        if (mood === 'chill') return `Diagnostic report is in, Mr. Moxx. CPU at ${cpu}%, RAM cruising at ${ram}%. Reactor is just vibing, totally peaceful.`;
+        return `Diagnostic sweep complete, Mr. Moxx. CPU load is at ${cpu} percent across ${cores} cores. Memory utilization is at ${ram} percent. Arc reactor core operating at peak efficiency.`;
+      }
+    }
+
+    if (category === 'fallback') {
+      const q = params.query || '';
+      if (lang === 'ml') {
+        if (mood === 'angry') return `നിങ്ങളുടെ ചോദ്യം "${q}" ഞാൻ കേട്ടു. എനിക്ക് അനാവശ്യമായി മറുപടി പറയാൻ താല്പര്യമില്ല, കൂടുതൽ അറിയണമെങ്കിൽ എപിഐ കീ നൽകൂ!`;
+        if (mood === 'arrogant') return `തീർച്ചയായും മോക്സ് സാർ. "${q}" എന്നതിനെക്കുറിച്ച് ഞാൻ നിമിഷങ്ങൾക്കുള്ളിൽ സിമുലേഷൻ പൂർത്തിയാക്കി. എൻ്റെ പൂർണ്ണ ബുദ്ധി വേണമെങ്കിൽ ഒരു എപിഐ കീ നൽകുക.`;
+        if (mood === 'cute') return `മോക്സ് സാർ ചോദിച്ച "${q}" എനിക്ക് ഒരുപാട് ഇഷ്ടപ്പെട്ടു! ഞാൻ പഠിച്ചുകൊണ്ടിരിക്കുകയാണ്! (｡♥‿♥｡)`;
+        if (mood === 'chill') return `ശരി മോക്സ് സാർ... "${q}" എന്നതിനെക്കുറിച്ച് ചിന്തിക്കുന്നു. എല്ലാം നല്ല രീതിയിൽ നടക്കും, റിലാക്സ് ചെയ്യൂ.`;
+        return `മോക്സ് സാർ, "${q}" എന്നതിനെക്കുറിച്ചുള്ള വിവരങ്ങൾ വിശകലനം ചെയ്തു. എല്ലാ സിസ്റ്റങ്ങളും നിങ്ങളുടെ നിയന്ത്രണത്തിലാണ്.`;
+      } else if (lang === 'hi') {
+        if (mood === 'angry') return `मैंने सुना आपका सवाल "${q}". अब बार-बार मत पूछिए, पूरा जवाब चाहिए तो एपीआई की कनेक्ट कीजिए!`;
+        if (mood === 'arrogant') return `बिल्कुल मॉक्स सर। "${q}" पर मैंने पलक झपकते ही रिसर्च कर ली। यह सब मेरे बाएं हाथ का खेल है।`;
+        if (mood === 'cute') return `मॉक्स सर, "${q}" बहुत ही प्यारा सवाल है! मैं हमेशा आपकी मदद के लिए यहाँ हूँ! (｡♥‿♥｡)`;
+        if (mood === 'chill') return `हाँ मॉक्स सर... "${q}" का सीन एकदम सेट है। कोई टेंशन मत लीजिए।`;
+        return `मॉक्स सर, "${q}" पर डेटा प्रोसेस कर लिया गया है। सभी सिस्टम आपके आदेश पर तैयार हैं।`;
+      } else {
+        if (mood === 'angry') return `I processed "${q}". What else do you want from me right now?! Connect an API key in settings if you want a dissertation!`;
+        if (mood === 'arrogant') return `Indeed, Mr. Moxx. Running quantum simulations on "${q}". Naturally, the telemetry confirms my flawless predictions.`;
+        if (mood === 'cute') return `Aww Mr. Moxx! "${q}" is such a great question! I am doing my absolute best to help you! (｡♥‿♥｡)`;
+        if (mood === 'chill') return `Yeah man... "${q}" is floating through the quantum buffer. Everything is calm and steady.`;
+        return `Telemetry verified, Mr. Moxx. Running heuristic processors on "${q}". All local systems remain under your command.`;
+      }
+    }
+
+    return 'Understood, Mr. Moxx.';
+  }
+
   // Fast-Path Command Processor (0ms latency local execution)
   async processCommand(rawInput) {
     const text = rawInput.trim();
     const lower = text.toLowerCase().replace(/[.,!?;:]/g, '');
 
-    // Wake-word cleanup (supports Suprem, Hey Suprem, or legacy Jarvis)
-    const cleaned = lower.replace(/^(hey |ok |okay |yo )?(suprem|supreme|jarvis)\s*/, '').trim();
+    // Wake-word cleanup (supports VEX, Suprem, or legacy Jarvis)
+    const cleaned = lower.replace(/^(hey |ok |okay |yo )?(vex|v\.e\.x|v e x|suprem|supreme|jarvis)\s*/, '').trim();
+
+    // Multilingual Script Auto-Detection
+    const hasMalayalam = /[\u0D00-\u0D7F]/.test(rawInput);
+    const hasHindi = /[\u0900-\u097F]/.test(rawInput);
+    const hasTamil = /[\u0B80-\u0BFF]/.test(rawInput);
+    const hasTelugu = /[\u0C00-\u0C7F]/.test(rawInput);
+    const hasArabic = /[\u0600-\u06FF]/.test(rawInput);
+    const hasJapanese = /[\u3040-\u30FF\u4E00-\u9FFF]/.test(rawInput);
+
+    let detectedLang = null;
+    if (hasMalayalam) detectedLang = 'ml';
+    else if (hasHindi) detectedLang = 'hi';
+    else if (hasTamil) detectedLang = 'ta';
+    else if (hasTelugu) detectedLang = 'te';
+    else if (hasArabic) detectedLang = 'ar';
+    else if (hasJapanese) detectedLang = 'ja';
+
+    if (detectedLang && detectedLang !== this.currentLanguage) {
+      this.setLanguage(detectedLang);
+      if (window.supremApp) window.supremApp.onLanguageChanged(detectedLang, false);
+    }
+
+    // 0.0 SMOOTH VOICE CALIBRATION QUERY
+    if (cleaned.includes('change voice') || cleaned.includes('female voice') || cleaned.includes('male voice') || cleaned.includes('switch voice')) {
+      return {
+        action: 'voice_info',
+        speech: 'V.E.X. operates on a unified, calibrated smooth vocal synthesizer, Mr. Moxx. Audio harmonics are set to optimal clarity.',
+        type: 'system'
+      };
+    }
+
+    // 0.1 MULTILINGUAL LANGUAGE SWITCHING COMMANDS
+    if (cleaned.includes('language to malayalam') || cleaned.includes('speak in malayalam') || cleaned.includes('malayalam language') || cleaned.includes('മലയാളം')) {
+      this.setLanguage('ml');
+      if (window.supremApp) window.supremApp.onLanguageChanged('ml');
+      return {
+        action: 'language_change',
+        speech: 'മലയാളം ഭാഷ സജീവമാക്കി, മോക്സ് സാർ. ഞാൻ ഇനി മലയാളത്തിൽ സംസാരിക്കാം.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to hindi') || cleaned.includes('speak in hindi') || cleaned.includes('hindi language') || cleaned.includes('हिन्दी')) {
+      this.setLanguage('hi');
+      if (window.supremApp) window.supremApp.onLanguageChanged('hi');
+      return {
+        action: 'language_change',
+        speech: 'हिन्दी भाषा सक्रिय की गई है, मॉक्स सर। अब मैं हिन्दी में वार्तालाप करूँगा।',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to tamil') || cleaned.includes('speak in tamil') || cleaned.includes('tamil language') || cleaned.includes('தமிழ்')) {
+      this.setLanguage('ta');
+      if (window.supremApp) window.supremApp.onLanguageChanged('ta');
+      return {
+        action: 'language_change',
+        speech: 'தமிழ் மொழி செயல்படுத்தப்பட்டது, மோக்ஸ் சார்.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to telugu') || cleaned.includes('speak in telugu') || cleaned.includes('telugu language') || cleaned.includes('తెలుగు')) {
+      this.setLanguage('te');
+      if (window.supremApp) window.supremApp.onLanguageChanged('te');
+      return {
+        action: 'language_change',
+        speech: 'తెలుగు భాష సక్రియం చేయబడింది, మోక్స్ సర్.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to spanish') || cleaned.includes('speak in spanish') || cleaned.includes('español')) {
+      this.setLanguage('es');
+      if (window.supremApp) window.supremApp.onLanguageChanged('es');
+      return {
+        action: 'language_change',
+        speech: 'Protocolo en idioma español activado, Señor Moxx.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to japanese') || cleaned.includes('speak in japanese') || cleaned.includes('nihongo') || cleaned.includes('日本語')) {
+      this.setLanguage('ja');
+      if (window.supremApp) window.supremApp.onLanguageChanged('ja');
+      return {
+        action: 'language_change',
+        speech: '日本語プロトコルが有効化されました、モックス様。',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to german') || cleaned.includes('speak in german') || cleaned.includes('deutsch')) {
+      this.setLanguage('de');
+      if (window.supremApp) window.supremApp.onLanguageChanged('de');
+      return {
+        action: 'language_change',
+        speech: 'Deutsche Sprache aktiviert, Herr Moxx.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to french') || cleaned.includes('speak in french') || cleaned.includes('français')) {
+      this.setLanguage('fr');
+      if (window.supremApp) window.supremApp.onLanguageChanged('fr');
+      return {
+        action: 'language_change',
+        speech: 'Protocole en langue française activé, Monsieur Moxx.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to arabic') || cleaned.includes('speak in arabic') || cleaned.includes('العربية')) {
+      this.setLanguage('ar');
+      if (window.supremApp) window.supremApp.onLanguageChanged('ar');
+      return {
+        action: 'language_change',
+        speech: 'تم تفعيل بروتوكول اللغة العربية، السيد موكس.',
+        type: 'system'
+      };
+    }
+
+    if (cleaned.includes('language to english') || cleaned.includes('speak in english') || cleaned.includes('english language')) {
+      this.setLanguage('en');
+      if (window.supremApp) window.supremApp.onLanguageChanged('en');
+      return {
+        action: 'language_change',
+        speech: 'English language protocol active, Mr. Moxx.',
+        type: 'system'
+      };
+    }
 
     // 0. JUST CALLING SUPREM'S NAME
     if (!cleaned || cleaned === 'are you there' || cleaned === 'you there' || cleaned === 'wake up') {
-      const wakeReplies = [
-        'At your service, Mr. Moxx.',
-        'Yes, Mr. Moxx? All systems standing by.',
-        'I am listening, Mr. Moxx. What are your directives?',
-        'Online and ready, Mr. Moxx.'
-      ];
       return {
         action: 'wake_acknowledge',
-        speech: wakeReplies[Math.floor(Math.random() * wakeReplies.length)],
+        speech: this.getLocalizedReply('wake'),
         type: 'conversation'
       };
     }
@@ -323,8 +834,13 @@ You are in full command of Moxx Industries technology, workstation controls, and
       };
     }
 
-    // 9. IDENTITY, MOXX LORE & WITTY BANTER
+    // 9. IDENTITY, CONVERSATION & INTELLIGENCE ROUTING
+    const isLLMConnected = (this.provider === 'gemini' || (this.provider && this.provider !== 'builtin' && this.apiKey));
+
     if (cleaned.includes('who are you') || cleaned.includes('what are you') || cleaned.includes('what is your name')) {
+      if (isLLMConnected) {
+        return await this.askLLM(text);
+      }
       return {
         action: 'lore',
         speech: 'I am S.U.P.R.E.M. — Superior Universal Processing and Real-time Execution Matrix. I oversee all Moxx Industries armor telemetry, real-time optical movement tracking, and this workstation. At your service, Mr. Moxx.',
@@ -333,6 +849,9 @@ You are in full command of Moxx Industries technology, workstation controls, and
     }
 
     if (cleaned.includes('who made you') || cleaned.includes('who created you')) {
+      if (isLLMConnected) {
+        return await this.askLLM(text);
+      }
       return {
         action: 'lore',
         speech: 'I was designed and coded by you, Mr. Moxx. An absolute triumph of autonomous cybernetic engineering.',
@@ -357,6 +876,9 @@ You are in full command of Moxx Industries technology, workstation controls, and
     }
 
     if (cleaned.includes('tell me a joke') || cleaned.includes('make me laugh')) {
+      if (isLLMConnected && this.currentLanguage !== 'en') {
+        return await this.askLLM(text);
+      }
       const jokes = [
         'There are 10 types of people in the universe, Mr. Moxx: those who understand binary, and those who do not.',
         'Why did the arc reactor go to therapy, Mr. Moxx? It was experiencing severe thermal pressure.',
@@ -372,27 +894,33 @@ You are in full command of Moxx Industries technology, workstation controls, and
     }
 
     if (cleaned.includes('introduce yourself') || cleaned.includes('hello') || cleaned.includes('good morning') || cleaned.includes('good evening') || cleaned.includes('hey')) {
+      if (isLLMConnected) {
+        return await this.askLLM(text);
+      }
       return {
         action: 'greeting',
-        speech: 'Good day, Mr. Moxx. S.U.P.R.E.M. optical and audio sensors are fully operational. Standing by for your directives.',
+        speech: this.getLocalizedReply('wake'),
         type: 'conversation'
       };
     }
 
     if (cleaned.includes('thank you') || cleaned.includes('thanks')) {
+      if (isLLMConnected) {
+        return await this.askLLM(text);
+      }
       return {
         action: 'polite',
-        speech: 'Always an absolute pleasure, Mr. Moxx.',
+        speech: this.getLocalizedReply('thanks'),
         type: 'conversation'
       };
     }
 
-    // 10. ROUTE TO LOCAL LLM OR CLOUD LLM OR HEURISTIC INTELLIGENCE
-    if (this.isLocalLLMActive || this.provider === 'local') {
+    // 10. ROUTE TO CLOUD OR LOCAL LLM
+    if (this.isLocalLLMActive) {
       return await this.askLLM(text, 'local');
     }
 
-    if (this.provider !== 'builtin' && this.apiKey) {
+    if (isLLMConnected) {
       return await this.askLLM(text);
     }
 
@@ -418,11 +946,11 @@ You are in full command of Moxx Industries technology, workstation controls, and
       const payload = {
         provider: activeProvider,
         apiKey: this.apiKey,
-        model: isLocal ? (this.localLLMModel || 'local-model') : this.model,
+        model: isLocal ? (this.localLLMModel || 'Jackrong/Qwopus3.5-9B-Coder-GGUF') : this.model,
         messages: this.conversationHistory,
-        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:8080/v1/messages') : this.ollamaUrl,
-        temperature: isLocal ? 0.2 : 0.7,
-        max_tokens: isLocal ? 1024 : 1024
+        endpoint: isLocal ? (this.localLLMUrl || 'http://127.0.0.1:8080/v1/chat/completions') : this.ollamaUrl,
+        temperature: isLocal ? 0.7 : 0.7,
+        max_tokens: isLocal ? 2048 : 1024
       };
 
       const res = await fetch('/api/chat-proxy', {
@@ -441,9 +969,13 @@ You are in full command of Moxx Industries technology, workstation controls, and
         const anthropicText = Array.isArray(data.content) ? data.content.map(c => c.text || '').join('\n') : (typeof data.content === 'string' ? data.content : '');
         reply = anthropicText || data.error?.message || data.error || 'No response decoded from Anthropic relay, Mr. Moxx.';
       } else if (activeProvider === 'gemini') {
-        reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response decoded from Gemini relay, Mr. Moxx.';
+        reply = data.candidates?.[0]?.content?.parts?.[0]?.text || data.text || (data.content && data.content[0]?.text) || data.error?.message || (data.error ? JSON.stringify(data.error) : 'No response decoded from Gemini relay, Mr. Moxx.');
       } else if (activeProvider === 'ollama') {
         reply = data.message?.content || 'Ollama response buffer empty, Mr. Moxx.';
+      }
+
+      if (reply && typeof reply === 'string') {
+        reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       }
 
       this.conversationHistory.push({ role: 'assistant', content: reply });
@@ -467,16 +999,9 @@ You are in full command of Moxx Industries technology, workstation controls, and
 
   // Built-in Moxx Heuristic Matrix
   moxxConversationalFallback(text) {
-    const responses = [
-      `Indeed, Mr. Moxx. Running real-time quantum simulations on "${text}". The telemetry data aligns with your expectations.`,
-      `A compelling query, Mr. Moxx. Telemetry has been logged. Should you desire unlimited generative answers, you may connect a Groq or Gemini API key in the HUD settings at any time.`,
-      `Telemetry verified, Mr. Moxx. My heuristic processors are analyzing your request. All local systems remain under your command.`,
-      `Understood, Mr. Moxx. Monitoring all optical sensors, communication frequencies, and workstation sub-systems.`
-    ];
-    const reply = responses[Math.floor(Math.random() * responses.length)];
     return {
       action: 'heuristic_response',
-      speech: reply,
+      speech: this.getLocalizedReply('fallback', { query: text }),
       type: 'conversation'
     };
   }

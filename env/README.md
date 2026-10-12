@@ -4,7 +4,9 @@ This directory stores environment variable configurations and templates for **S.
 
 ## Available Files
 
-- `.env.development` - Pre-configured development settings with temporary mock values and Anthropic Claude integration.
+- `.env` - Main active environment configuration (git-ignored).
+- `.env.local` - Local override configuration for private secrets / API keys (git-ignored).
+- `.env.development` - Pre-configured development default settings.
 - `.env.production` - Recommended production settings template.
 - `.env.example` - Generic template demonstrating all available variables.
 
@@ -35,14 +37,15 @@ This directory stores environment variable configurations and templates for **S.
 
 ## How S.U.P.R.E.M. Loads Environment Variables
 
-`server.js` checks for a `.env` file at the root directory of the project upon startup:
-1. When running Node.js 20.6.0+, it utilizes native `process.loadEnvFile(path.join(__dirname, '.env'))`.
-2. For earlier Node versions, it falls back to a built-in line parser.
-3. If no root `.env` exists, it automatically falls back to `env/.env.development`.
+`server.js` automatically loads environment configurations in the following order (later files override earlier ones):
+1. `env/.env.development` (or `env/.env.production` if `NODE_ENV=production`)
+2. `env/.env` (main active configuration)
+3. `.env` (root fallback if present)
+4. `env/.env.local` (local secrets & overrides)
 
-To activate one of the configurations in this directory, copy it to the root `.env`:
+To create or update your environment configuration:
 
 ```bash
 # On Windows (PowerShell)
-Copy-Item env/.env.development .env
+Copy-Item env/.env.example env/.env
 ```
