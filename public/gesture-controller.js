@@ -170,6 +170,53 @@ class SupremGestureController {
       this.targetX = Math.max(10, Math.min(screenW - 10, normX * screenW));
       this.targetY = Math.max(10, Math.min(screenH - 10, normY * screenH));
 
+      // =====================================================================
+      // 3D ARC REACTOR TELEMETRY COMPUTATION (Tony Stark Holographic Control)
+      // =====================================================================
+      const wrist = landmarks[0];
+      const middleMcp = landmarks[9];
+      const ringTip = landmarks[16];
+      const pinkyTip = landmarks[20];
+
+      // Hand 2D/3D Center (mirrored X for camera feed)
+      const handCenterX = 1 - (wrist.x + middleMcp.x) / 2;
+      const handCenterY = (wrist.y + middleMcp.y) / 2;
+      const reactorNormX = (handCenterX - 0.5) * 2.2;
+      const reactorNormY = (handCenterY - 0.5) * 2.2;
+
+      // Hand Roll (tilt angle in radians)
+      const handRoll = Math.atan2((middleMcp.y - wrist.y), (1 - middleMcp.x) - (1 - wrist.x)) - Math.PI / 2;
+
+      // Hand Depth / Span (distance between wrist and middle MCP)
+      const handDepthSpan = Math.hypot((1 - middleMcp.x) - (1 - wrist.x), middleMcp.y - wrist.y);
+
+      // Check finger extensions (distance from wrist)
+      const dIndex = Math.hypot((1 - indexTip.x) - (1 - wrist.x), indexTip.y - wrist.y);
+      const dMiddle = Math.hypot((1 - middleTip.x) - (1 - wrist.x), middleTip.y - wrist.y);
+      const dRing = Math.hypot((1 - ringTip.x) - (1 - wrist.x), ringTip.y - wrist.y);
+      const dPinky = Math.hypot((1 - pinkyTip.x) - (1 - wrist.x), pinkyTip.y - wrist.y);
+      const dThumb = Math.hypot((1 - thumbTip.x) - (1 - wrist.x), thumbTip.y - wrist.y);
+
+      // Open Hand / Palm: all 4 main fingers extended outward
+      const isOpenHand = dIndex > 0.22 && dMiddle > 0.24 && dRing > 0.21 && dPinky > 0.18;
+
+      // Closed Fist: all fingers curled tightly toward palm
+      const isFist = dIndex < 0.15 && dMiddle < 0.15 && dRing < 0.14 && dPinky < 0.13;
+
+      // Forward to 3D Arc Reactor
+      if (window.arcReactor3D) {
+        window.arcReactor3D.updateHandTelemetry({
+          normX: reactorNormX,
+          normY: reactorNormY,
+          roll: handRoll,
+          handSpan: handDepthSpan,
+          isOpen: isOpenHand,
+          isFist: isFist,
+          isPinch: pinchDist < 0.065,
+          isAirTap: pinchDist < 0.05
+        });
+      }
+
       // Calculate Pinch Distance between Thumb (4) and Index (8)
       const dx = thumbTip.x - indexTip.x;
       const dy = thumbTip.y - indexTip.y;
@@ -184,15 +231,16 @@ class SupremGestureController {
           this.triggerAirClick('PINCH CLICK');
           this.isPinching = true;
           this.lastPinchTime = now;
+          if (window.arcReactor3D) window.arcReactor3D.fireShockwave();
         }
       } else {
         this.isPinching = false;
       }
 
       // AIR SWIPE SCROLL GESTURE (Two fingers extended: index 8 + middle 12 moving vertically)
-      const handCenterY = (indexTip.y + middleTip.y) / 2;
+      const handSwipeY = (indexTip.y + middleTip.y) / 2;
       if (this.prevHandY !== null && !this.isPinching) {
-        const deltaY = handCenterY - this.prevHandY;
+        const deltaY = handSwipeY - this.prevHandY;
         if (Math.abs(deltaY) > 0.04 && now - this.lastScrollTime > 60) {
           const scrollAmount = deltaY * screenH * 1.5;
           window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
@@ -206,7 +254,7 @@ class SupremGestureController {
           this.lastScrollTime = now;
         }
       }
-      this.prevHandY = handCenterY;
+      this.prevHandY = handSwipeY;
 
       // Dwell click for steady hand on target
       const speed = Math.abs(this.targetX - this.cursorX) + Math.abs(this.targetY - this.cursorY);
@@ -220,6 +268,9 @@ class SupremGestureController {
       this.handDetected = false;
       this.prevHandY = null;
       this.cancelDwell();
+      if (window.arcReactor3D) {
+        window.arcReactor3D.releaseHand();
+      }
     }
   }
 

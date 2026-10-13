@@ -7,23 +7,32 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Load environment variables (.env or env/.env.development) if present
+const dns = require('dns');
 try {
-  const rootEnv = path.join(__dirname, '.env');
-  const envFolderDev = path.join(__dirname, 'env', '.env.development');
-  const targetEnv = fs.existsSync(rootEnv) ? rootEnv : (fs.existsSync(envFolderDev) ? envFolderDev : null);
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
 
-  if (targetEnv) {
-    if (process.loadEnvFile) {
-      process.loadEnvFile(targetEnv);
-    } else {
-      const lines = fs.readFileSync(targetEnv, 'utf8').split(/\r?\n/);
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        const [k, ...v] = trimmed.split('=');
-        if (k && !process.env[k.trim()]) process.env[k.trim()] = v.join('=').trim();
-      }
+// Load environment variables from the env/ directory
+try {
+  const isProd = process.env.NODE_ENV === 'production';
+  const envCandidates = [
+    path.join(__dirname, 'env', isProd ? '.env.production' : '.env.development'),
+    path.join(__dirname, 'env', '.env'),
+    path.join(__dirname, '.env'),
+    path.join(__dirname, 'env', '.env.local')
+  ];
+
+  for (const envFile of envCandidates) {
+    if (fs.existsSync(envFile)) {
+      try {
+        const lines = fs.readFileSync(envFile, 'utf8').split(/\r?\n/);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const [k, ...v] = trimmed.split('=');
+          if (k) process.env[k.trim()] = v.join('=').trim();
+        }
+      } catch (err) {}
     }
   }
 } catch (e) {
@@ -185,6 +194,21 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
+// Config telemetry endpoint (provides default LLM provider & models)
+app.get('/api/config', (req, res) => {
+  res.json({
+    defaultProvider: process.env.DEFAULT_LLM_PROVIDER || 'local',
+    defaultModel: process.env.DEFAULT_LLM_MODEL || 'Jackrong/Qwopus3.5-9B-Coder-GGUF',
+    localUrl: process.env.LOCAL_LLM_URL || 'http://127.0.0.1:8080/v1/chat/completions',
+    localModel: process.env.LOCAL_LLM_MODEL || 'Jackrong/Qwopus3.5-9B-Coder-GGUF',
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    geminiKey: process.env.GEMINI_API_KEY || '',
+    hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+    hasOpenAiKey: !!process.env.OPENAI_API_KEY,
+    hasGroqKey: !!process.env.GROQ_API_KEY
+  });
+});
+
 // LLM Proxy endpoint to avoid CORS issues
 app.post('/api/chat-proxy', async (req, res) => {
   const { provider, apiKey, model, messages, temperature = 0.7 } = req.body;
@@ -229,17 +253,67 @@ app.post('/api/chat-proxy', async (req, res) => {
     } else if (provider === 'gemini') {
       const activeKey = apiKey || process.env.GEMINI_API_KEY;
       if (!activeKey) return res.status(400).json({ error: 'Gemini API Key not configured' });
-      const geminiModel = model || 'gemini-1.5-flash';
-      const contents = messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${activeKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents })
-      });
-      const data = await response.json();
+      
+      let geminiModel = model || process.env.DEFAULT_LLM_MODEL || 'gemini-3.8-flash';
+      if (geminiModel === 'gemini-1.5-flash' || geminiModel === 'gemini-2.5-flash' || geminiModel === 'gemini-flash-latest') {
+        geminiModel = 'gemini-3.8-flash';
+      }
+
+      // Extract system instructions if present
+      const systemMessage = messages.find(m => m.role === 'system')?.content;
+
+      // Filter non-system messages and alternate turns to satisfy Gemini API requirements
+      const filtered = messages.filter(m => m.role !== 'system');
+      const contents = [];
+      for (const m of filtered) {
+        const role = m.role === 'assistant' ? 'model' : 'user';
+        if (contents.length > 0 && contents[contents.length - 1].role === role) {
+          contents[contents.length - 1].parts[0].text += '\n' + (m.content || '');
+        } else {
+          contents.push({
+            role,
+            parts: [{ text: m.content || '' }]
+          });
+        }
+      }
+
+      if (contents.length === 0) {
+        contents.push({ role: 'user', parts: [{ text: 'Status report' }] });
+      }
+
+      const requestPayload = { contents };
+      if (systemMessage) {
+        requestPayload.system_instruction = {
+          parts: [{ text: systemMessage }]
+        };
+      }
+
+      const callGemini = async (mod) => {
+        return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${activeKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload)
+        });
+      };
+
+      let response = await callGemini(geminiModel);
+      let data = await response.json();
+
+      // If model not found (404), fallback smoothly
+      if (!response.ok && data.error?.code === 404) {
+        const fallbacks = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.5-flash'];
+        for (const fb of fallbacks) {
+          if (fb === geminiModel) continue;
+          response = await callGemini(fb);
+          data = await response.json();
+          if (response.ok) break;
+        }
+      }
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: data.error?.message || `Gemini API error ${response.status}`, details: data });
+      }
+
       return res.json(data);
     } else if (provider === 'anthropic') {
       const activeKey = apiKey || process.env.ANTHROPIC_API_KEY;
@@ -295,15 +369,13 @@ app.post('/api/chat-proxy', async (req, res) => {
       const data = await response.json();
       return res.json(data);
     } else if (provider === 'local') {
-      // Normalize the local URL:
-      // 1. If it still points to /v1/messages (old Anthropic path), rewrite to /v1/chat/completions
-      // 2. If the URL has no path (e.g. https://host.ts.net/), append the correct path
-      // 3. Support Tailscale URLs like https://moxxs-laptop.tailea601b.ts.net/
       let localUrl = req.body.endpoint || process.env.LOCAL_LLM_URL || 'http://127.0.0.1:8080/v1/chat/completions';
 
       // Fix legacy /v1/messages → /v1/chat/completions
-      if (localUrl.includes('/v1/messages')) {
+      if (localUrl.includes('/v1/messages') && req.body.llmType !== 'anthropic' && process.env.LOCAL_LLM_TYPE !== 'anthropic') {
         localUrl = localUrl.replace('/v1/messages', '/v1/chat/completions');
+      } else if (localUrl.includes('8080') && localUrl.includes('/messages')) {
+        localUrl = localUrl.replace('/messages', '/chat/completions');
       }
 
       // If the URL has no API path, append the OpenAI-compatible path
@@ -315,15 +387,39 @@ app.post('/api/chat-proxy', async (req, res) => {
       } catch (_) { /* ignore bad URLs */ }
 
       const localModel = model || process.env.LOCAL_LLM_MODEL || 'Jackrong/Qwopus3.5-9B-Coder-GGUF';
+      const isAnthropicType = (req.body.llmType === 'anthropic' || process.env.LOCAL_LLM_TYPE === 'anthropic') && !localUrl.includes('8080') && !localUrl.includes('/chat/completions');
 
-      // Always use OpenAI-compatible format for llama-server
-      const localBody = {
-        model: localModel,
-        messages,
-        temperature: req.body.temperature !== undefined ? req.body.temperature : 0.7,
-        max_tokens: req.body.max_tokens || 2048
-      };
-      const headers = { 'Content-Type': 'application/json' };
+      let localBody;
+      let headers = { 'Content-Type': 'application/json' };
+
+      if (isAnthropicType) {
+        const systemMessage = messages.find(m => m.role === 'system')?.content;
+        const anthropicMessages = messages
+          .filter(m => m.role !== 'system')
+          .map(m => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content
+          }));
+        localBody = {
+          model: localModel,
+          max_tokens: req.body.max_tokens || 2048,
+          messages: anthropicMessages.length ? anthropicMessages : [{ role: 'user', content: 'Status report' }]
+        };
+        if (systemMessage) localBody.system = systemMessage;
+        if (req.body.temperature !== undefined) localBody.temperature = req.body.temperature;
+        headers['anthropic-version'] = '2023-06-01';
+        if (apiKey || process.env.ANTHROPIC_API_KEY) {
+          headers['x-api-key'] = apiKey || process.env.ANTHROPIC_API_KEY;
+        }
+      } else {
+        // OpenAI-compatible format (llama-server)
+        localBody = {
+          model: localModel,
+          messages,
+          temperature: req.body.temperature !== undefined ? req.body.temperature : 0.7,
+          max_tokens: req.body.max_tokens || 2048
+        };
+      }
 
       console.log(`[LOCAL LLM] → ${localUrl} | model: ${localModel}`);
 
@@ -345,7 +441,7 @@ app.post('/api/chat-proxy', async (req, res) => {
 
       const data = await response.json();
 
-      // Strip thinking tokens (<think>...</think>) from Qwopus / Qwen / DeepSeek reasoning models
+      // Clean thinking tags from Qwopus / DeepSeek / Qwen models for clean speech and HUD display
       if (data.choices?.[0]?.message?.content) {
         data.choices[0].message.content = data.choices[0].message.content
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
@@ -375,7 +471,7 @@ wss.on('connection', (ws) => {
     try {
       const parsed = JSON.parse(message);
       if (parsed.type === 'ping') {
-        ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+        ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now(), sendTime: parsed.sendTime }));
       }
     } catch (e) {
       // ignore
@@ -389,7 +485,7 @@ wss.on('connection', (ws) => {
 
 server.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`  [MOXX INDUSTRIES] S.U.P.R.E.M. ONLINE ON PORT ${PORT}`);
+  console.log(`  [MOXX INDUSTRIES] V.E.X. [MVEX OS] ONLINE ON PORT ${PORT}`);
   console.log(`  ACCESS HUD: http://localhost:${PORT}`);
   console.log(`======================================================\n`);
 });

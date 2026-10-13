@@ -1,5 +1,5 @@
 /* ==========================================================================
-   J.A.R.V.I.S. // STARK INDUSTRIES MARK LXXXV HOLOGRAPHIC HUD INTERFACE
+   V.E.X. // MOXX INDUSTRIES MVEX OS HOLOGRAPHIC HUD INTERFACE
    ========================================================================== */
 
 @font-face {
@@ -145,7 +145,14 @@ body::after {
   filter: drop-shadow(0 0 8px var(--stark-cyan-glow));
 }
 
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .brand-text h1 {
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.45rem;
   letter-spacing: 4px;
@@ -154,14 +161,26 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
+  line-height: 1.1;
 }
 
 .brand-text .subtext {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   letter-spacing: 2px;
   color: var(--stark-cyan);
-  opacity: 0.85;
+  opacity: 0.88;
+  line-height: 1.2;
+}
+
+.brand-text .os-subtext {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 2.5px;
+  color: var(--stark-gold);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  line-height: 1.2;
 }
 
 .header-status-grid {
@@ -439,7 +458,7 @@ body::after {
 .arc-canvas-wrapper {
   position: relative;
   width: 100%;
-  max-width: 380px;
+  max-width: 100%;
   height: 280px;
   cursor: pointer;
   display: flex;
@@ -454,13 +473,22 @@ body::after {
 
 .reactor-click-hint {
   position: absolute;
-  bottom: 6px;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   color: var(--stark-cyan);
-  opacity: 0.75;
-  letter-spacing: 1px;
+  opacity: 0.88;
+  letter-spacing: 1.5px;
   pointer-events: none;
+  background: rgba(3, 10, 20, 0.78);
+  padding: 4px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 242, 254, 0.22);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  z-index: 5;
 }
 
 /* State Status Banner */
@@ -765,22 +793,142 @@ body::after {
   color: var(--text-muted);
 }
 
-/* Radar Scope Box */
-.radar-box {
-  width: 100%;
-  height: 180px;
+/* NetSpeed Indicator Box */
+.netspeed-box {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-cyan);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(0, 229, 255, 0.05);
+}
+
+.netspeed-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--stark-cyan), transparent);
+}
+
+.netspeed-readouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.netspeed-stat {
+  background: rgba(0, 15, 30, 0.55);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 3px;
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.netspeed-stat.mini {
+  padding: 3px 6px;
+}
+
+.netspeed-stat-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 5px;
 }
 
-#radarCanvas {
+.netspeed-icon {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.netspeed-icon.down {
+  color: var(--stark-cyan);
+  text-shadow: 0 0 6px var(--stark-cyan);
+}
+
+.netspeed-icon.up {
+  color: var(--stark-gold);
+  text-shadow: 0 0 6px var(--stark-gold);
+}
+
+.netspeed-icon.ping {
+  color: #00ff88;
+  font-size: 0.72rem;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+}
+
+.netspeed-icon.jitter {
+  color: #c084fc;
+  font-size: 0.72rem;
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.5);
+}
+
+.netspeed-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.netspeed-stat-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.netspeed-val {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+
+.netspeed-stat:nth-child(1) .netspeed-val {
+  color: var(--stark-cyan);
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+}
+
+.netspeed-stat:nth-child(2) .netspeed-val {
+  color: var(--stark-gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.netspeed-val.mini {
+  font-size: 0.85rem;
+}
+
+.netspeed-unit {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.netspeed-canvas-box {
+  width: 100%;
+  height: 125px;
+  position: relative;
+  border-radius: 3px;
+  background: rgba(2, 8, 18, 0.7);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+#netSpeedCanvas {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
-/* Mark LXXXV Suit Diagnostic Schematic */
+/* MVEX OS Suit Diagnostic Schematic */
 .suit-schematic-box {
   background: var(--bg-glass);
   border: 1px solid var(--border-cyan);
@@ -1537,5 +1685,297 @@ body::after {
 .hands-free-toggle input[type="checkbox"] {
   cursor: pointer;
   accent-color: #00ffaa;
+}
+
+/* =========================================================================
+   3D ARC REACTOR HUD CONTROLS & GESTURE TELEMETRY
+   ========================================================================= */
+.reactor-header-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(0, 15, 30, 0.65);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 4px 4px 0 0;
+  z-index: 5;
+}
+
+.reactor-title-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  color: var(--stark-cyan);
+}
+
+.reactor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reactor-btn {
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reactor-btn:hover {
+  background: rgba(0, 229, 255, 0.22);
+  border-color: var(--stark-cyan);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.reactor-btn.active {
+  background: rgba(0, 229, 255, 0.3);
+  border-color: var(--stark-cyan);
+  color: var(--stark-cyan);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+}
+
+.reactor-footer-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 10px;
+  z-index: 5;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.arc-gesture-badge-container {
+  display: flex;
+  align-items: center;
+}
+
+.arc-gesture-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+  color: var(--stark-cyan);
+  background: rgba(0, 229, 255, 0.07);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+  transition: all 0.25s ease;
+}
+
+/* =========================================================================
+   QUICK VOICE MODULATOR (HUD CONSOLE HEADER)
+   ========================================================================= */
+.quick-voice-modulator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 20, 40, 0.75);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.voice-mod-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--stark-cyan);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.quick-voice-select {
+  background: rgba(0, 10, 25, 0.9);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+}
+
+.quick-voice-select:focus {
+  border-color: var(--stark-cyan);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.35);
+}
+
+.voice-test-btn {
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid var(--stark-cyan);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-test-btn:hover {
+  background: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 10px var(--stark-cyan);
+}
+
+/* =========================================================================
+   SPEECH SYNTHESIS & VOICE CHANGING STUDIO (SETTINGS MODAL)
+   ========================================================================= */
+.voice-studio-section {
+  border-top: 1px solid rgba(0, 229, 255, 0.25);
+  padding-top: 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-section-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: var(--stark-cyan);
+  margin: 0;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+.voice-sliders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 20, 38, 0.6);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-header label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.slider-val-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: bold;
+  color: var(--stark-cyan);
+  background: rgba(0, 229, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.hud-slider {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--stark-cyan);
+  height: 6px;
+  border-radius: 3px;
+}
+
+.voice-effects-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.voice-test-bar {
+  margin-top: 4px;
+}
+
+/* =========================================================================
+   MULTILINGUAL & PERSONALITY MATRIX UI ENHANCEMENTS
+   ========================================================================= */
+.quick-modulator-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 18, 36, 0.75);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+.mod-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.arc-wave-badge-container {
+  display: flex;
+  align-items: center;
+}
+
+.arc-wave-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+  color: var(--stark-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arc-wave-badge.hearing {
+  color: #00ffcc;
+  border-color: #00ffcc;
+  background: rgba(0, 255, 204, 0.14);
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.4);
+  animation: acousticPulse 1.2s infinite ease-in-out;
+}
+
+.arc-wave-badge.saying {
+  color: #ffd700;
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.14);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  animation: acousticPulse 0.9s infinite ease-in-out;
+}
+
+@keyframes acousticPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
 }
 

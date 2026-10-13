@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="S.U.P.R.E.M. - Autonomous Moxx Industries Holographic AI Assistant with Real-time PC Telemetry, Voice Interaction, Optical Movement Tracking, and Multi-Engine Intelligence">
-  <title>S.U.P.R.E.M. // Moxx Industries Mark LXXXV HUD System</title>
+  <meta name="description" content="V.E.X. - Autonomous Moxx Industries Holographic AI Assistant with Real-time PC Telemetry, Voice Interaction, Optical Movement Tracking, and Multi-Engine Intelligence">
+  <title>V.E.X. // Moxx Industries MVEX OS HUD System</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -28,8 +28,9 @@
           </svg>
         </div>
         <div class="brand-text">
-          <h1>S.U.P.R.E.M.</h1>
-          <span class="subtext">MOXX INDUSTRIES // MARK LXXXV OS // REV 4.2</span>
+          <h1>V.E.X.</h1>
+          <span class="subtext">MOXX INDUSTRIES</span>
+          <span class="os-subtext">MVEX OS</span>
         </div>
       </div>
 
@@ -174,82 +175,95 @@
           </div>
         </div>
 
-        <!-- API Key Configuration Section -->
-        <div class="panel-title-bar" style="margin-top: 6px;">
-          <h2 class="panel-title">API KEY VAULT</h2>
-          <span class="panel-tag" id="apiKeyStatusTag">NOT SET</span>
-        </div>
-
-        <div class="api-key-section">
-          <div class="api-key-provider-row">
-            <label for="apiProviderQuick" class="api-label">ENGINE</label>
-            <select id="apiProviderQuick" class="api-select">
-              <option value="builtin">Built-in (Offline)</option>
-              <option value="local">Local LLM (Port 8080 / Anthropic)</option>
-              <option value="anthropic">Anthropic (Claude 3.5)</option>
-              <option value="groq">Groq (LLaMA 3.3)</option>
-              <option value="gemini">Google Gemini</option>
-              <option value="openai">OpenAI (GPT-4o)</option>
-              <option value="ollama">Ollama (Local)</option>
-            </select>
-          </div>
-
-          <div class="api-key-input-row">
-            <label for="apiKeyQuickInput" class="api-label">KEY</label>
-            <div class="api-key-input-wrapper">
-              <input type="password" id="apiKeyQuickInput" class="api-key-input" placeholder="Enter API key...">
-              <button id="apiKeyVisibilityBtn" class="api-key-toggle-btn" title="Show / Hide Key">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="api-key-model-row">
-            <label for="apiModelQuick" class="api-label">MODEL</label>
-            <input type="text" id="apiModelQuick" class="api-key-input" placeholder="Custom model (optional)...">
-          </div>
-
-          <button id="saveApiKeyBtn" class="api-save-btn">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            SAVE &amp; ACTIVATE
-          </button>
-        </div>
       </aside>
 
       <!-- ------------------------------------------------------------------
            CENTER COLUMN: ARC REACTOR CORE & VOICE CONSOLE
            ------------------------------------------------------------------ -->
       <section class="center-column">
-        <!-- Interactive Arc Reactor Canvas Stage -->
+        <!-- Interactive 3D Arc Reactor Canvas Stage -->
         <div class="hud-panel reactor-stage-container">
-          <div class="arc-canvas-wrapper" id="arcReactorTrigger" title="Click to trigger Diagnostics Sweep">
-            <canvas id="arcReactorCanvas"></canvas>
-            <span class="reactor-click-hint">[ TAP ARC REACTOR FOR DIAGNOSTICS ]</span>
+          <!-- 3D Reactor Controls Header -->
+          <div class="reactor-header-bar">
+            <div class="reactor-title-tag">
+              <span class="pulse-indicator"></span>
+              <span>MVEX OS // 3D ACOUSTIC WAVE MATRIX</span>
+            </div>
+            <div class="reactor-actions">
+              <button id="toggleHandGestureBtn" class="reactor-btn" title="Toggle Hand Gesture Tracking on Webcam">
+                🖐️ HAND CONTROL
+              </button>
+              <button id="explodeLayersBtn" class="reactor-btn" title="Explode / Assemble 3D Component Layers">
+                📐 EXPLODE LAYERS
+              </button>
+              <button id="resetReactorViewBtn" class="reactor-btn" title="Reset 3D Orientation">
+                🔄 RESET
+              </button>
+            </div>
           </div>
 
-          <div class="jarvis-state-badge" id="jarvisStateBadge">
-            <div class="status-indicator"></div>
-            <span id="jarvisStateText">STANDBY</span>
+          <!-- 3D Arc Canvas Wrapper -->
+          <div class="arc-canvas-wrapper" id="arcReactorTrigger" title="Click or Drag in 3D / Air-tap to discharge">
+            <canvas id="arcReactorCanvas"></canvas>
+            <span class="reactor-click-hint" id="reactorHintText">[ DRAG TO ROTATE 3D WAVE // SCROLL TO ZOOM // VOICE REACTIVE ]</span>
+          </div>
+
+          <!-- Reactor Footer Bar -->
+          <div class="reactor-footer-bar">
+            <div class="jarvis-state-badge" id="jarvisStateBadge">
+              <div class="status-indicator"></div>
+              <span id="jarvisStateText">STANDBY</span>
+            </div>
+            <div class="arc-gesture-badge-container">
+              <span id="arcGestureBadge" class="arc-gesture-badge">🖐️ GESTURE: STANDBY // AIR CONTROL READY</span>
+            </div>
+            <div class="arc-wave-badge-container">
+              <span id="arcWaveBadge" class="arc-wave-badge" title="Acoustic Wave Reactive Matrix">🌊 SONIC MATRIX // VOICE REACTIVE WAVE ACTIVE</span>
+            </div>
           </div>
         </div>
 
         <!-- Voice Interaction & Terminal Console -->
         <div class="voice-console">
           <div class="panel-title-bar">
-            <h2 class="panel-title">TELEMETRY TRANSCRIPT & COMMAND RELAY</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h2 class="panel-title">TELEMETRY TRANSCRIPT & COMMAND RELAY</h2>
+            </div>
+            <!-- Quick Modulator Cluster: Language & Voice -->
+            <div class="quick-modulator-cluster" title="Quick AI Modulator">
+
+              <!-- Language Selector -->
+              <div class="mod-selector-item" title="Switch Language">
+                <span class="voice-mod-label">🌐 LANG:</span>
+                <select id="hudLanguageSelect" class="quick-voice-select">
+                  <option value="en">🇬🇧 English</option>
+                  <option value="ml">🇮🇳 മലയാളം (Malayalam)</option>
+                  <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                  <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+                  <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+                  <option value="es">🇪🇸 Español (Spanish)</option>
+                  <option value="ja">🇯🇵 日本語 (Japanese)</option>
+                  <option value="de">🇩🇪 Deutsch (German)</option>
+                  <option value="fr">🇫🇷 Français (French)</option>
+                  <option value="ar">🇸🇦 العربية (Arabic)</option>
+                </select>
+              </div>
+
+              <!-- Test Smooth Voice -->
+              <div class="mod-selector-item" title="Test V.E.X. Smooth Voice">
+                <button id="quickTestVoiceBtn" class="voice-test-btn" title="Test Smooth Voice Output">
+                  🎙️ TEST VOICE
+                </button>
+              </div>
+            </div>
             <div style="display: flex; align-items: center; gap: 14px;">
               <div class="hud-toggle-wrapper local-ai-toggle-wrapper" title="Route queries directly to Local LLM on port 8080">
                 <input type="checkbox" id="localLlmToggle">
-                <label for="localLlmToggle">LOCAL AI (PORT 8080)</label>
+                <label for="localLlmToggle">LOCAL AI (8080)</label>
               </div>
-              <div class="hands-free-toggle" title="Automatically keep listening for 'Suprem'">
+              <div class="hands-free-toggle" title="Automatically keep listening for 'V.E.X.'">
                 <input type="checkbox" id="handsFreeToggle" checked>
-                <label for="handsFreeToggle">WAKE WORD: "SUPREM"</label>
+                <label for="handsFreeToggle">WAKE WORD: "VEX"</label>
               </div>
             </div>
           </div>
@@ -259,7 +273,7 @@
 
           <!-- Input bar and Mic Trigger -->
           <div class="console-controls">
-            <button id="micToggleBtn" class="mic-toggle-btn" title="Toggle Voice Recognition (Call 'Suprem')">
+            <button id="micToggleBtn" class="mic-toggle-btn" title="Toggle Voice Recognition (Call 'V.E.X.')">
               <svg viewBox="0 0 24 24">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
@@ -267,7 +281,7 @@
             </button>
 
             <div class="command-input-wrapper">
-              <input type="text" id="commandInput" class="command-input" placeholder="Call 'Suprem' or type a command (e.g. 'track me', 'open calculator', 'system status')...">
+              <input type="text" id="commandInput" class="command-input" placeholder="Call 'VEX' or type a command (e.g. 'track me', 'open calculator', 'system status')...">
               <button id="sendBtn" class="send-btn" title="Execute Command">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -345,14 +359,62 @@
           </div>
         </div>
 
-        <!-- Tactical Orbital Radar Scope -->
+        <!-- NetSpeed Indicator / Network Telemetry -->
         <div class="panel-title-bar" style="margin-top: 4px;">
-          <h2 class="panel-title">TACTICAL ORBITAL RADAR</h2>
-          <span class="panel-tag">DEFENSE GRID</span>
+          <h2 class="panel-title">NETSPEED INDICATOR</h2>
+          <span class="panel-tag" id="netSpeedStatusTag">ONLINE // GBIT</span>
         </div>
 
-        <div class="radar-box">
-          <canvas id="radarCanvas"></canvas>
+        <div class="netspeed-box">
+          <div class="netspeed-readouts">
+            <div class="netspeed-stat">
+              <div class="netspeed-stat-header">
+                <span class="netspeed-icon down">↓</span>
+                <span class="netspeed-label">DOWNLOAD</span>
+              </div>
+              <div class="netspeed-stat-val-row">
+                <span class="netspeed-val" id="netDownSpeed">284.6</span>
+                <span class="netspeed-unit">Mbps</span>
+              </div>
+            </div>
+
+            <div class="netspeed-stat">
+              <div class="netspeed-stat-header">
+                <span class="netspeed-icon up">↑</span>
+                <span class="netspeed-label">UPLOAD</span>
+              </div>
+              <div class="netspeed-stat-val-row">
+                <span class="netspeed-val" id="netUpSpeed">94.2</span>
+                <span class="netspeed-unit">Mbps</span>
+              </div>
+            </div>
+
+            <div class="netspeed-stat mini">
+              <div class="netspeed-stat-header">
+                <span class="netspeed-icon ping">⚡</span>
+                <span class="netspeed-label">PING</span>
+              </div>
+              <div class="netspeed-stat-val-row">
+                <span class="netspeed-val" id="netPingVal">12</span>
+                <span class="netspeed-unit">ms</span>
+              </div>
+            </div>
+
+            <div class="netspeed-stat mini">
+              <div class="netspeed-stat-header">
+                <span class="netspeed-icon jitter">〰</span>
+                <span class="netspeed-label">JITTER</span>
+              </div>
+              <div class="netspeed-stat-val-row">
+                <span class="netspeed-val" id="netJitterVal">0.8</span>
+                <span class="netspeed-unit">ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="netspeed-canvas-box">
+            <canvas id="netSpeedCanvas"></canvas>
+          </div>
         </div>
 
         <!-- Atmospheric Weather Telemetry -->
@@ -372,10 +434,10 @@
     <footer class="hud-footer">
       <div class="ticker-text">
         <span style="color: #fff;">[SYSTEM]</span>
-        <span>MOXX INDUSTRIES OS v4.2 // SECURITY LEVEL ALPHA // S.U.P.R.E.M. OPTICAL & AUDIO MATRIX READY</span>
+        <span>MOXX INDUSTRIES MVEX OS // SECURITY LEVEL ALPHA // V.E.X. OPTICAL & AUDIO MATRIX READY</span>
       </div>
       <div style="font-family: var(--font-mono); color: var(--text-muted);">
-        SUPREM AI v4.2.0-MOXX
+        V.E.X. AI // MVEX OS
       </div>
     </footer>
   </div>
@@ -390,7 +452,7 @@
       <div class="visor-hud-overlay">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div style="font-family: var(--font-display); color: var(--stark-cyan); letter-spacing: 2px;">
-            MOXX OPTICAL VISOR // S.U.P.R.E.M. MOVEMENT TRACKING
+            MOXX OPTICAL VISOR // V.E.X. MOVEMENT TRACKING
           </div>
           <button id="closeCameraBtn" class="hud-btn-icon" style="background: rgba(255, 51, 68, 0.4); border-color: var(--stark-crimson); color: #fff;">
             ✕ CLOSE VISOR
@@ -413,7 +475,7 @@
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">S.U.P.R.E.M. COGNITIVE CORE & VOICE CONFIG</h3>
+        <h3 class="modal-title">V.E.X. COGNITIVE CORE & VOICE CONFIG</h3>
         <button id="closeSettingsBtn" class="close-btn">&times;</button>
       </div>
 
@@ -453,9 +515,38 @@
         <input type="text" id="ollamaUrlInput" class="form-input" value="http://localhost:11434">
       </div>
 
-      <div class="form-group">
-        <label for="voiceSelect">SPEECH SYNTHESIS VOICE (British Butler Preferred)</label>
-        <select id="voiceSelect" class="form-select"></select>
+      <!-- Multilingual Localization Section -->
+      <div class="voice-studio-section">
+        <h4 class="settings-section-title">🌐 MULTILINGUAL INTELLIGENCE & SPEECH RECOGNITION</h4>
+        <div class="form-group">
+          <label for="settingsLanguageSelect">PRIMARY LANGUAGE / ഭാഷ / भाषा</label>
+          <select id="settingsLanguageSelect" class="form-select">
+            <option value="en">🇬🇧 English (International & UK)</option>
+            <option value="ml">🇮🇳 മലയാളം (Malayalam - Kerala)</option>
+            <option value="hi">🇮🇳 हिन्दी (Hindi - National)</option>
+            <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+            <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+            <option value="es">🇪🇸 Español (Spanish)</option>
+            <option value="ja">🇯🇵 日本語 (Japanese)</option>
+            <option value="de">🇩🇪 Deutsch (German)</option>
+            <option value="fr">🇫🇷 Français (French)</option>
+            <option value="ar">🇸🇦 العربية (Arabic)</option>
+          </select>
+          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--stark-cyan); margin-top: 4px; display: block;">
+            * V.E.X. transcribes microphone input and speaks in the chosen language.
+          </span>
+        </div>
+      </div>
+
+
+      <div class="voice-studio-section">
+        <h4 class="settings-section-title">🎙️ V.E.X. SMOOTH VOICE SYNTHESIZER</h4>
+        <div class="voice-test-bar">
+          <button id="modalTestVoiceBtn" type="button" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            TEST SMOOTH VOICE OUTPUT
+          </button>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -543,6 +634,7 @@
 
   <!-- Scripts -->
   <script type="module" src="gesture-controller.js"></script>
+  <script type="module" src="arc-reactor-3d.js"></script>
   <script src="sound-effects.js"></script>
   <script src="hud-visualizer.js"></script>
   <script src="jarvis-brain.js"></script>
